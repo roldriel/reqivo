@@ -7,7 +7,7 @@ name = "Reqivo"
 dynamic = ["version"]
 description = "A modern, async-first HTTP client library for Python"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = {file = "LICENSE.md"}
+license = "MIT"
 requires-python = ">=3.9"
 authors = [
     { name = "Rodrigo Ezequiel Roldán", email = "roldriel@gmail.com" }
