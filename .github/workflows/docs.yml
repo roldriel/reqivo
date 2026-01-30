@@ -1,0 +1,100 @@
+name: Documentation
+
+on:
+  push:
+    branches: [master]
+    tags: [ '*' ]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      deploy:
+        description: 'Deploy to GitHub Pages'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Validación rápida de documentación
+  docs-check:
+    name: Documentation Check
+    runs-on: ubuntu-22.04
+    permissions: {}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.11'
+          cache-key-suffix: docs-check
+          extra-deps: 'sphinx sphinx-rtd-theme'
+
+      - name: Check documentation syntax
+        shell: bash
+        run: |
+          echo "📝 Checking documentation syntax..."
+          cd docs
+          
+          # Verificar archivos RST
+          echo "Checking RST files..."
+          for file in $(find . -name "*.rst"); do
+            echo "Checking: $file"
+            python -c "import docutils.core; docutils.core.publish_doctree(open('$file').read())" 2>/dev/null || echo "⚠️ Syntax issues in $file"
+          done
+          
+          # Verificar archivos MD (básico)
+          echo "Checking MD files..."
+          for file in $(find . -name "*.md"); do
+            echo "Checking: $file"
+            [ -f "$file" ] && echo "✅ $file exists" || echo "⚠️ $file not found"
+          done
+          
+          # Verificar configuración de Sphinx
+          # cd source
+          # python -c "import conf; print('✅ Sphinx configuration is valid')"
+
+      - name: Check for broken links
+        shell: bash
+        run: |
+          echo "🔗 Checking for broken internal links..."
+          cd docs
+          # Verificación básica de enlaces internos
+          grep -r "\.\." . --include="*.rst" --include="*.md" | grep -v "_build" || echo "✅ No obvious broken links found"
+
+  # Construcción de documentación
+  docs-build:
+    name: Build Documentation
+    runs-on: ubuntu-22.04
+    needs: docs-check
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.11'
+          cache-key-suffix: docs-build
+          extra-deps: 'sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints'

@@ -1,0 +1,97 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Validación pre-release
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-22.04
+    permissions: {}
+    timeout-minutes: 10
+    outputs:
+      tag-name: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update system packages
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y software-properties-common || true
+
+      - name: Validate tag format
+        id: tag
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          echo "🏷️ Validating tag: $TAG_NAME"
+          
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Tag format must be v*.*.* (e.g., v1.0.0)"
+            exit 1
+          fi
+          
+          VERSION=${TAG_NAME#v}
+          echo "✅ Tag format is valid: $TAG_NAME (version: $VERSION)"
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists in git history
+        run: |
+          if ! git tag --list | grep -q "^${{ steps.tag.outputs.tag }}$"; then
+            echo "❌ Tag ${{ steps.tag.outputs.tag }} not found in git history"
+            exit 1
+          fi
+          echo "✅ Tag exists in git history"
+
+      - name: Verify version in source
+        run: |
+          # Extract version directly from the single source of truth
+          SRC_VERSION=$(python3 -c "import sys; sys.path.append('src'); import reqivo; print(reqivo.__version__)")
+          echo "📝 Version in src/reqivo/__init__.py: $SRC_VERSION"
+          
+          if [[ "$SRC_VERSION" != "${{ steps.tag.outputs.version }}" ]]; then
+            echo "❌ Version mismatch: tag=${{ steps.tag.outputs.version }}, src=$SRC_VERSION"
+            exit 1
+          fi
+          echo "✅ Version matches in source: $SRC_VERSION"
+
+  # Tests finales antes del release
+  pre-release-tests:
+    name: Pre-Release Tests
+    runs-on: ubuntu-22.04
+    permissions: {}
+    needs: validate-release
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update system packages
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y software-properties-common || true
+
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache-key-suffix: release-tests
+          install-tox: true
+
+      - name: Run comprehensive tests
+        run: |
+          echo "🧪 Running comprehensive tests for release..."
+          python -m tox -e py

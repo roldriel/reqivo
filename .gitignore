@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Editor / IDE settings
+.vscode/
+.idea/
+*.swp
+.claude/
+
+# Distribution / packaging
+.pypirc
+build/
+dist/
+*.egg-info/
+*.egg
+*.manifest
+
+# Testing / coverage
+htmlcov/
+.coverage
+.tox/
+.cache/
+.pytest_cache/
+coverage.xml
+
+# Sphinx documentation
+docs/_build/
+docs/.doctrees/
+docs/.buildinfo
+
+# Sphinx build artifacts (only in _build)
+docs/_build/**/*.doctree
+docs/_build/**/*.pickle
+docs/_build/**/*.inv
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs and backups
+*.log
+*.bak
+build_log.txt

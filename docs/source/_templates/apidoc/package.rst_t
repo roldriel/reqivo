@@ -1,0 +1,36 @@
+{{ pkgname }} package
+{{ "=" * (pkgname|length + 9) }}
+
+.. automodule:: {{ pkgname }}
+   :members:
+{%- if pkgname == "reqivo" %}
+   :exclude-members: Session, AsyncSession, Request, AsyncRequest, Response, WebSocket, AsyncWebSocket, ConnectionPool
+{%- endif %}
+   :show-inheritance:
+   :undoc-members:
+
+{%- if subpackages %}
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+{% for subpackage in subpackages %}
+   {{ subpackage }}
+{%- endfor %}
+{%- endif %}
+{%- if submodules %}
+
+Submodules
+----------
+{% for submodule in submodules %}
+{{ submodule }} module
+{{ "-" * (submodule|length + 7) }}
+
+.. automodule:: {{ submodule }}
+   :members:
+   :show-inheritance:
+   :undoc-members:
+{% endfor %}
+{%- endif %}
