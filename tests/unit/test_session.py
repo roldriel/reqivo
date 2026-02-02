@@ -1,4 +1,6 @@
-"""Unit tests for reqivo.client.session module.
+"""tests/unit/test_session.py
+
+Unit tests for reqivo.client.session module.
 
 Test Coverage:
     - Session and AsyncSession initialization
@@ -158,8 +160,9 @@ class TestSessionRequests:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
 
         MockRequest.get.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
@@ -169,8 +172,8 @@ class TestSessionRequests:
 
         # Verify
         assert result == mock_response
-        session.pool.get_connection.assert_called_once()
-        session.pool.put_connection.assert_called_once_with(mock_conn)
+        mock_pool.get_connection.assert_called_once()
+        mock_pool.put_connection.assert_called_once_with(mock_conn)
         MockRequest.get.assert_called_once()
 
     @mock.patch("reqivo.client.session.Request")
@@ -190,8 +193,10 @@ class TestSessionRequests:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.get.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -220,8 +225,10 @@ class TestSessionRequests:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.get.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -260,7 +267,10 @@ class TestSessionRequests:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.set_session_instance = mock.Mock()
         MockRequest.get.side_effect = Exception("Network error")
 
@@ -286,8 +296,10 @@ class TestSessionRequests:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.post.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -299,9 +311,10 @@ class TestSessionRequests:
 
     def test_close_closes_pool(self, session: Session) -> None:
         """Test that close() closes the connection pool."""
-        session.pool.close_all = mock.Mock()
+        mock_pool = mock.Mock()
+        session.pool = mock_pool
         session.close()
-        session.pool.close_all.assert_called_once()
+        mock_pool.close_all.assert_called_once()
 
 
 # ============================================================================
@@ -366,23 +379,26 @@ class TestAsyncSession:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
-        async_session.pool.put_connection = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
         MockAsyncRequest.set_session_instance = mock.Mock()
 
         result = await async_session.get("https://example.com/test")
 
         assert result == mock_response
-        async_session.pool.get_connection.assert_awaited_once()
-        async_session.pool.put_connection.assert_awaited_once()
+        mock_pool.get_connection.assert_awaited_once()
+        mock_pool.put_connection.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_async_close(self, async_session: AsyncSession) -> None:
         """Test async close."""
-        async_session.pool.close_all = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        async_session.pool = mock_pool
         await async_session.close()
-        async_session.pool.close_all.assert_awaited_once()
+        mock_pool.close_all.assert_awaited_once()
 
     @pytest.mark.asyncio
     @mock.patch("reqivo.client.session.AsyncRequest")
@@ -402,8 +418,10 @@ class TestAsyncSession:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
-        async_session.pool.put_connection = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
         MockAsyncRequest.set_session_instance = mock.Mock()
 
@@ -434,8 +452,10 @@ class TestAsyncSession:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
-        async_session.pool.put_connection = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
         MockAsyncRequest.set_session_instance = mock.Mock()
 
@@ -466,8 +486,10 @@ class TestAsyncSession:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
-        async_session.pool.put_connection = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
         MockAsyncRequest.set_session_instance = mock.Mock()
 
@@ -498,8 +520,10 @@ class TestAsyncSession:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
-        async_session.pool.put_connection = mock.AsyncMock()
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
         MockAsyncRequest.set_session_instance = mock.Mock()
 
@@ -537,7 +561,10 @@ class TestAsyncSession:
 
         mock_conn = mock.Mock()
         mock_conn.close = mock.AsyncMock()
-        async_session.pool.get_connection = mock.AsyncMock(return_value=mock_conn)
+        mock_pool = mock.AsyncMock()
+        mock_pool.get_connection.return_value = mock_conn
+        async_session.pool = mock_pool
+
         MockAsyncRequest.send = mock.AsyncMock(
             side_effect=RuntimeError("Request failed")
         )
@@ -560,7 +587,9 @@ class TestSessionExceptionHandling:
         session = Session()
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
 
         # Mock Request.send to raise exception
         original_send = Request.send
@@ -611,8 +640,10 @@ class TestSessionExceptionHandling:
         mock_response = mock.Mock(spec=Response)
         mock_response.headers = {}
 
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.get.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -644,8 +675,10 @@ class TestSessionExceptionHandling:
         mock_response = mock.Mock(spec=Response)
         mock_response.headers = {}
 
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.post.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -677,8 +710,10 @@ class TestSessionExceptionHandling:
         mock_response = mock.Mock(spec=Response)
         mock_response.headers = {}
 
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.post.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -710,8 +745,10 @@ class TestSessionExceptionHandling:
         mock_response = mock.Mock(spec=Response)
         mock_response.headers = {}
 
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
-        session.pool.put_connection = mock.Mock()
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.post.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
@@ -753,7 +790,10 @@ class TestSessionExceptionHandling:
         mock_urlparse.return_value = mock_parsed
 
         mock_conn = mock.Mock()
-        session.pool.get_connection = mock.Mock(return_value=mock_conn)
+        mock_pool = mock.Mock()
+        mock_pool.get_connection.return_value = mock_conn
+        session.pool = mock_pool
+
         MockRequest.set_session_instance = mock.Mock()
         MockRequest.post.side_effect = RuntimeError("POST failed")
 
