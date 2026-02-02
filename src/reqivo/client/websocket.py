@@ -1,4 +1,4 @@
-"""client/websocket.py
+"""src/reqivo/client/websocket.py
 
 WebSocket client implementation (Sync and Async).
 """
@@ -51,6 +51,16 @@ class WebSocket:
     """
     Synchronous WebSocket Client.
     """
+
+    __slots__ = (
+        "url",
+        "timeout",
+        "headers",
+        "subprotocols",
+        "sock",
+        "connected",
+        "_buffer",
+    )
 
     def __init__(
         self,
@@ -272,6 +282,18 @@ class AsyncWebSocket:
     """
     Asynchronous WebSocket Client.
     """
+
+    __slots__ = (
+        "url",
+        "timeout",
+        "headers",
+        "subprotocols",
+        "connection",
+        "connected",
+        "_buffer",
+        "reader",
+        "writer",
+    )
 
     def __init__(
         self,

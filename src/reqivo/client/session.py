@@ -1,4 +1,4 @@
-"""client/session.py
+"""src/reqivo/client/session.py
 
 HTTP Session management module.
 
@@ -34,6 +34,8 @@ class Session:
         _bearer_token: Bearer token for authentication.
     """
 
+    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token")
+
     def __init__(self) -> None:
         """
         Initialize a new HTTP session.
@@ -55,7 +57,7 @@ class Session:
             password: Password for authentication.
         """
         self._basic_auth = (username, password)
-        # Limpia bearer si se setea basic
+        # Clear bearer token if basic auth is set
         self._bearer_token = None
 
     def set_bearer_token(self, token: str) -> None:
@@ -66,7 +68,7 @@ class Session:
             token: Bearer token for authentication.
         """
         self._bearer_token = token
-        # Limpia basic si se setea bearer
+        # Clear basic auth if bearer token is set
         self._basic_auth = None
 
     def _update_cookies_from_response(self, response: Response) -> None:
@@ -101,7 +103,7 @@ class Session:
         """Sends a GET request."""
 
         merged_headers = {**self.headers, **(headers or {})}
-        # Inyectar Authorization si corresponde
+        # Inject Authorization header if applicable
         if self._basic_auth:
             merged_headers["Authorization"] = build_basic_auth_header(
                 self._basic_auth[0], self._basic_auth[1]
@@ -137,14 +139,14 @@ class Session:
 
             self._update_cookies_from_response(response)
 
-            # Devolvemos conexión al pool
-            # En esta versión radical, no hay stream=True
+            # Return connection to pool
+            # In this radical version, there is no stream=True
             self.pool.put_connection(conn)
 
             return response
 
         except Exception:
-            # Si hubo error, aseguramos que la conexión se cierre
+            # If there was an error, ensure the connection is closed
             conn.close()
             raise
 
@@ -161,7 +163,7 @@ class Session:
         """Sends a POST request."""
 
         merged_headers = {**self.headers, **(headers or {})}
-        # Inyectar Authorization si corresponde
+        # Inject Authorization header if applicable
         if self._basic_auth:
             merged_headers["Authorization"] = build_basic_auth_header(
                 self._basic_auth[0], self._basic_auth[1]
@@ -222,6 +224,8 @@ class AsyncSession:
     """
     Asynchronous HTTP session manager.
     """
+
+    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token")
 
     def __init__(self) -> None:
         self.cookies: Dict[str, str] = {}
