@@ -13,27 +13,48 @@ release = reqivo.__version__
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "myst_parser",
-    "pallets_sphinx_themes",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = []
 
-html_theme = "flask"
+# MyST-Parser configuration
+myst_heading_anchors = 3
+myst_all_links_external = False
+myst_enable_extensions = ["colon_fence"]
+
+# Suppress warnings (cosmetic issues that don't affect documentation)
+suppress_warnings = [
+    "myst.xref_missing",  # External file links Sphinx can't resolve
+    "ref.python",  # Duplicate cross-reference warnings from re-exports
+]
+
+# Autodoc configuration
+autodoc_default_options = {
+    "imported-members": False,
+}
+autodoc_class_content = "init"
+autodoc_member_order = "bysource"
+
+# Furo theme configuration
+html_theme = "furo"
 html_static_path = ["_static"]
+html_baseurl = "https://roldriel.github.io/reqivo/"
 
 html_theme_options = {
-    "canonical_url": "https://roldriel.github.io/reqivo/",
+    "source_repository": "https://github.com/roldriel/reqivo",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+    "light_css_variables": {
+        "color-brand-primary": "#2962FF",
+        "color-brand-content": "#2962FF",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#82B1FF",
+        "color-brand-content": "#82B1FF",
+    },
 }
 
-html_context = {
-    "project_name": "Reqivo",
-    "github_user": "roldriel",
-    "github_repo": "reqivo",
-}
-
-html_sidebars = {
-    "index": ["project.html", "sidebar_nav.html", "searchbox.html", "ethicalads.html"],
-    "**": ["sidebar_nav.html", "relations.html", "searchbox.html", "ethicalads.html"],
-}
+html_title = "Reqivo"

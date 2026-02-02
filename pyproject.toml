@@ -36,7 +36,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-docs = ["sphinx", "myst-parser"]
+docs = ["sphinx", "myst-parser", "furo"]
 test = ["pytest", "coverage", "pytest-asyncio"]
 
 [project.urls]
