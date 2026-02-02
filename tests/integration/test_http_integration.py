@@ -1,4 +1,6 @@
-"""Integration tests for HTTP client functionality.
+"""tests/integration/test_http_integration.py
+
+Integration tests for HTTP client functionality.
 
 These tests use a local HTTP test server to validate real HTTP communication
 without external dependencies.
