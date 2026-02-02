@@ -1,26 +1,26 @@
 # ADR-010: Limited Public API Surface
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-API pública es el contrato con usuarios. Dos enfoques:
+Public API is the contract with users. Two approaches:
 
-1. **Todo público**: Exportar todos los módulos
-   - Pros: Máxima flexibilidad
-   - Cons: Difícil mantener backward compatibility
+1. **Everything public**: Export all modules
+   - Pros: Maximum flexibility
+   - Cons: Difficult to maintain backward compatibility
 
-2. **API limitada**: Solo exportar lo esencial
-   - Pros: Libertad para cambiar internals
-   - Cons: Puede limitar use cases avanzados
+2. **Limited API**: Only export essentials
+   - Pros: Freedom to change internals
+   - Cons: May limit advanced use cases
 
-### Decisión
+### Decision
 
-**Exportar solo API esencial en `reqivo.__init__.py`**.
+**Export only essential API in `reqivo.__init__.py`**.
 
-Exports públicos:
+Public exports:
 ```python
 # src/reqivo/__init__.py
 
@@ -31,13 +31,13 @@ from .client.response import Response
 from .client.websocket import WebSocket, AsyncWebSocket
 from .client.auth import basic_auth, bearer_token
 
-# Exceptions (todas públicas)
+# Exceptions (all public)
 from .exceptions import *
 
 # Version
 from .version import __version__
 
-# Utils selectos
+# Selected utils
 from .utils.timing import Timeout
 
 __all__ = [
@@ -59,63 +59,63 @@ __all__ = [
     "Timeout",
     # Version
     "__version__",
-    # Exceptions exportadas vía *
+    # Exceptions exported via *
 ]
 ```
 
-**NO exportado (internal)**:
+**NOT exported (internal)**:
 - `reqivo.http.*` (HttpParser, Headers, Body)
 - `reqivo.transport.*` (Connection, ConnectionPool, TLS)
-- `reqivo.utils.*` (excepto Timeout)
+- `reqivo.utils.*` (except Timeout)
 
-**Uso**:
+**Usage**:
 ```python
-# ✅ Público, estable
+# ✅ Public, stable
 from reqivo import Session, Response
 from reqivo import ConnectTimeout
 
-# ❌ Internal, puede cambiar
-from reqivo.http.http11 import HttpParser  # No garantizado
-from reqivo.transport.connection import Connection  # Puede cambiar
+# ❌ Internal, may change
+from reqivo.http.http11 import HttpParser  # Not guaranteed
+from reqivo.transport.connection import Connection  # May change
 ```
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Backward compatibility**: Solo API pública es estable
-2. **Refactoring freedom**: Internals pueden cambiar sin breaking
-3. **Clear contract**: Usuarios saben qué es estable
-4. **Smaller docs**: Solo documentar API pública
-5. **Semantic versioning**: Breaking changes claros
+1. **Backward compatibility**: Only public API is stable
+2. **Refactoring freedom**: Internals can change without breaking
+3. **Clear contract**: Users know what is stable
+4. **Smaller docs**: Only document public API
+5. **Semantic versioning**: Clear breaking changes
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Menos flexibilidad**: Usuarios no pueden acceder a internals
-2. **Feature requests**: Casos avanzados pueden no ser posibles
-3. **Frustración**: "¿Por qué no puedo importar X?"
+1. **Less flexibility**: Users cannot access internals
+2. **Feature requests**: Advanced cases may not be possible
+3. **Frustration**: "Why can't I import X?"
 
-#### Mitigaciones
+#### Mitigations
 
-- **Extensible API**: Permitir customización vía hooks
-- **Feature requests**: Evaluar promover internals a públicos
-- **Documentation**: Explicar por qué API es limitada
+- **Extensible API**: Allow customization via hooks
+- **Feature requests**: Evaluate promoting internals to public
+- **Documentation**: Explain why API is limited
 
 ### Semantic Versioning
 
-Con API limitada, versioning es claro:
+With limited API, versioning is clear:
 
-- **Major (X.0.0)**: Breaking changes en API pública
-- **Minor (0.X.0)**: Nuevas features en API pública, backward compatible
-- **Patch (0.0.X)**: Bug fixes, no cambia API
+- **Major (X.0.0)**: Breaking changes in public API
+- **Minor (0.X.0)**: New features in public API, backward compatible
+- **Patch (0.0.X)**: Bug fixes, doesn't change API
 
-Cambios internos NO requieren major version bump.
+Internal changes DO NOT require major version bump.
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Todo público**: Rechazada. Dificulta evolución.
-2. **Nada público (solo Session)**: Rechazada. Muy limitante.
-3. **Underscore convention**: Rechazada. No enforced por imports.
+1. **Everything public**: Rejected. Makes evolution difficult.
+2. **Nothing public (only Session)**: Rejected. Too limiting.
+3. **Underscore convention**: Rejected. Not enforced by imports.
 
 ### References
 

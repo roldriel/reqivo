@@ -1,10 +1,10 @@
 # ADR-004: LIFO Connection Pooling
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Estado**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
 Connection pooling es crítico para performance. Dos estrategias principales:
 
@@ -16,11 +16,11 @@ Connection pooling es crítico para performance. Dos estrategias principales:
 - Conexiones más recientes tienen más probabilidad de estar activas
 - Cache locality: conexiones recientes están más "calientes"
 
-### Decisión
+### Decision
 
 **Usar LIFO (Last In, First Out) para connection pooling**.
 
-Implementación:
+Implementation:
 ```python
 class ConnectionPool:
     def __init__(self):
@@ -43,38 +43,38 @@ class ConnectionPool:
 - Dead connection detection antes de reutilizar
 - Thread-safe con `threading.Lock`
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Menos conexiones muertas**: Conexiones recientes más probablemente activas
 2. **Cache locality**: Mejores hit rates en CPU cache
 3. **Simple**: Lista como stack es eficiente O(1)
 4. **Predictible**: Comportamiento determinístico
 
-#### Negativas ❌
+#### Negative ❌
 
 1. **Desbalance**: Algunas conexiones nunca se reutilizan si pool está activo
 2. **Starvation**: Conexiones antiguas pueden quedar idle hasta timeout
 3. **No es round-robin**: No distribuye carga uniformemente
 
-#### Mitigaciones
+#### Mitigations
 
 - **Dead connection detection**: Verificar `is_usable()` antes de reutilizar
 - **Max idle time**: (futuro) Descartar conexiones muy antiguas
 - **Pool limits**: Evitar crecimiento infinito
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **FIFO**: Rechazada. Más conexiones muertas, peor performance.
-2. **Round-robin**: Rechazada. Más complejo, no mejora performance.
-3. **Least recently used**: Rechazada. Overhead de tracking innecesario.
+1. **FIFO**: Rejected. Más conexiones muertas, peor performance.
+2. **Round-robin**: Rejected. Más complejo, no mejora performance.
+3. **Least recently used**: Rejected. Overhead de tracking innecesario.
 
 ### Performance Data
 
 (Pendiente: benchmarks comparando LIFO vs FIFO)
 
-### Referencias
+### References
 
 - [urllib3 connection pooling](https://urllib3.readthedocs.io/en/stable/advanced-usage.html#connection-pooling)
 - httpcore pool implementation

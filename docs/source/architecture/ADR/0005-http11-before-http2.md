@@ -1,10 +1,10 @@
 # ADR-005: HTTP/1.1 Before HTTP/2
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Estado**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
 Opciones de protocolo HTTP a soportar:
 
@@ -17,7 +17,7 @@ Opciones de protocolo HTTP a soportar:
 - HTTP/2: Requiere HPACK, multiplexing, binary frames, flow control
 - HTTP/3: Requiere QUIC stack completo
 
-### Decisión
+### Decision
 
 **Implementar HTTP/1.1 completo y robusto ANTES de HTTP/2**.
 
@@ -45,9 +45,9 @@ v2.0.0+:         HTTP/3 (maybe)
 - Flow control
 - Priority
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Mejor foundation**: HTTP/1.1 robusto antes de complejidad
 2. **Usable hoy**: HTTP/1.1 cubre 99% de casos
@@ -55,25 +55,25 @@ v2.0.0+:         HTTP/3 (maybe)
 4. **Debugging simple**: HTTP/1.1 es texto legible
 5. **Zero dependencies**: HTTP/2 sin h2 lib es posible pero complejo
 
-#### Negativas ❌
+#### Negative ❌
 
 1. **Sin HTTP/2 features**: No multiplexing, no server push (por ahora)
 2. **Performance limitado**: HTTP/1.1 tiene head-of-line blocking
 3. **Competencia**: httpx ya tiene HTTP/2
 
-#### Mitigaciones
+#### Mitigations
 
 - **Roadmap claro**: HTTP/2 en v1.0.0 está comprometido
 - **Documentar limitación**: Ser transparente sobre HTTP/1.1 only
 - **Connection pooling**: Mitiga parcialmente lack de multiplexing
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **HTTP/2 desde día 1**: Rechazada. Demasiada complejidad inicial.
-2. **Solo HTTP/1.1 forever**: Rechazada. HTTP/2 es futuro.
-3. **HTTP/3 primero**: Rechazada. Extremadamente complejo.
+1. **HTTP/2 desde día 1**: Rejected. Demasiada complejidad inicial.
+2. **Solo HTTP/1.1 forever**: Rejected. HTTP/2 es futuro.
+3. **HTTP/3 primero**: Rejected. Extremadamente complejo.
 
-### Referencias
+### References
 
 - RFC 7230-7235: HTTP/1.1
 - RFC 7540: HTTP/2

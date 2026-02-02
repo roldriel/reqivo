@@ -1,28 +1,28 @@
 # ADR-006: Granular Exception Hierarchy
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Manejo de errores puede ser:
+Error handling can be:
 
-1. **Genérico**: Un solo tipo `HttpError`
-2. **Granular**: Excepciones específicas para cada tipo de error
-3. **Muy granular**: Sub-excepciones para cada caso
+1. **Generic**: A single `HttpError` type
+2. **Granular**: Specific exceptions for each error type
+3. **Very granular**: Sub-exceptions for each case
 
-Beneficios de granularidad:
-- Permite catch selectivo
-- Mejor recovery strategies
-- Debugging más fácil
-- Documentación más clara
+Benefits of granularity:
+- Allows selective catching
+- Better recovery strategies
+- Easier debugging
+- Clearer documentation
 
-### Decisión
+### Decision
 
-**Implementar jerarquía granular de excepciones** con 3 niveles:
+**Implement granular exception hierarchy** with 3 levels:
 
-```python
+```text
 ReqivoError (base)
 ├── RequestError
 │   ├── NetworkError
@@ -35,63 +35,63 @@ ReqivoError (base)
 │   └── RedirectLoopError
 ```
 
-**Uso**:
+**Usage**:
 ```python
-# Catch específico
+# Specific catch
 try:
     response = session.get(url)
 except ConnectTimeout:
-    # Retry con timeout mayor
+    # Retry with higher timeout
     response = session.get(url, timeout=30)
 except TlsError:
     # Log security issue
     logger.error("TLS handshake failed")
     raise
 except NetworkError:
-    # Fallback a otra URL
+    # Fallback to another URL
     response = session.get(fallback_url)
 
-# Catch genérico
+# Generic catch
 except ReqivoError:
-    # Handle cualquier error de Reqivo
+    # Handle any Reqivo error
     pass
 ```
 
-**Principios**:
-- Cada excepción representa un failure mode distinto
-- Herencia permite catch a diferentes niveles
-- Nombres descriptivos (`ConnectTimeout` vs `Timeout`)
-- Context info opcional sin datos sensibles
+**Principles**:
+- Each exception represents a distinct failure mode
+- Inheritance allows catching at different levels
+- Descriptive names (`ConnectTimeout` vs `Timeout`)
+- Optional context info without sensitive data
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Recovery strategies**: Código puede reaccionar específicamente
-2. **Debugging**: Stack traces más claros
-3. **Documentation**: API docs muestran qué puede fallar
-4. **Type safety**: mypy puede verificar exception handling
-5. **Testable**: Fácil testear cada path de error
+1. **Recovery strategies**: Code can react specifically
+2. **Debugging**: Clearer stack traces
+3. **Documentation**: API docs show what can fail
+4. **Type safety**: mypy can verify exception handling
+5. **Testable**: Easy to test each error path
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Más código**: Más clases que mantener
-2. **Documentación**: Cada excepción debe documentarse
-3. **Breaking changes**: Añadir excepciones puede romper código existente
+1. **More code**: More classes to maintain
+2. **Documentation**: Each exception must be documented
+3. **Breaking changes**: Adding exceptions can break existing code
 
-#### Mitigaciones
+#### Mitigations
 
-- **Jerarquía estable**: No cambiar inheritance después de v1.0
-- **Documentación completa**: Cada excepción con docstring
-- **Semantic versioning**: Breaking changes solo en major versions
+- **Stable hierarchy**: Don't change inheritance after v1.0
+- **Complete documentation**: Each exception with docstring
+- **Semantic versioning**: Breaking changes only in major versions
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Solo ReqivoError**: Rechazada. Dificulta recovery.
-2. **String error codes**: Rechazada. No type-safe.
-3. **Excepciones de stdlib**: Rechazada. No específicas para HTTP.
+1. **Only ReqivoError**: Rejected. Makes recovery difficult.
+2. **String error codes**: Rejected. Not type-safe.
+3. **Stdlib exceptions**: Rejected. Not specific to HTTP.
 
-### Referencias
+### References
 
 - PEP 3151: Reworking the OS and IO exception hierarchy
 - requests.exceptions

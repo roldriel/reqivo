@@ -1,12 +1,12 @@
 # ADR-013: Python 3.9+ Minimum Version
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Python versions y soporte:
+Python versions and support:
 
 | Version | Release | EOL | Status |
 |---------|---------|-----|--------|
@@ -17,28 +17,28 @@ Python versions y soporte:
 | 3.11 | 2022-10 | 2027-10 | ✅ Supported |
 | 3.12 | 2023-10 | 2028-10 | ✅ Supported |
 
-Features por versión relevantes para Reqivo:
+Features per version relevant for Reqivo:
 
 **Python 3.9+**:
 - `dict` merge operator (`|`)
-- Type hints improvements (`list[str]` en lugar de `List[str]`)
+- Type hints improvements (`list[str]` instead of `List[str]`)
 - `zoneinfo` module
 - Performance improvements
 
 **Python 3.10+**:
 - Pattern matching (`match`/`case`)
 - Better error messages
-- Union types (`str | None` en lugar de `Optional[str]`)
+- Union types (`str | None` instead of `Optional[str]`)
 
 **Python 3.11+**:
 - Exception groups
 - Performance (10-60% faster)
 
-### Decisión
+### Decision
 
-**Python 3.9+ es la versión mínima soportada**.
+**Python 3.9+ is the minimum supported version**.
 
-Configuración (`pyproject.toml`):
+Configuration (`pyproject.toml`):
 ```toml
 [project]
 requires-python = ">=3.9"
@@ -52,45 +52,45 @@ strategy:
     python-version: ["3.9", "3.10", "3.11", "3.12"]
 ```
 
-**Razón**:
-- 3.9 tiene EOL en 2025-10 (suficiente runway)
-- Type hints modernos sin `typing.List`, `typing.Dict`
+**Reason**:
+- 3.9 has EOL in 2025-10 (sufficient runway)
+- Modern type hints without `typing.List`, `typing.Dict`
 - Async improvements
-- Balance entre modernidad y compatibilidad
+- Balance between modernity and compatibility
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Modern features**: Dict merge, better type hints
-2. **Long support**: 3.9 EOL en 2025-10
-3. **Performance**: 3.9+ es más rápido que 3.7/3.8
-4. **Security**: Versiones viejas sin security patches
+2. **Long support**: 3.9 EOL in 2025-10
+3. **Performance**: 3.9+ is faster than 3.7/3.8
+4. **Security**: Old versions without security patches
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Excluye 3.8**: Algunos usuarios aún en 3.8
-2. **Legacy systems**: Sistemas viejos pueden no tener 3.9+
-3. **Corporate environments**: Empresas lentas para actualizar
+1. **Excludes 3.8**: Some users still on 3.8
+2. **Legacy systems**: Old systems may not have 3.9+
+3. **Corporate environments**: Companies slow to update
 
-#### Mitigaciones
+#### Mitigations
 
-- **Documentación clara**: Indicar 3.9+ requirement
-- **Error message**: Setup.py falla con mensaje claro si <3.9
-- **Long support**: 3.9 EOL lejano aún
+- **Clear documentation**: Indicate 3.9+ requirement
+- **Error message**: Setup.py fails with clear message if <3.9
+- **Long support**: 3.9 EOL still distant
 
 ### Type Hints Examples
 
 **Python 3.9+**:
 ```python
-# ✅ Moderno (3.9+)
+# ✅ Modern (3.9+)
 def get_headers(self) -> dict[str, str]:
     return self._headers
 
 def get_cookies(self) -> list[str]:
     return self._cookies
 
-# ❌ Viejo (3.7-3.8)
+# ❌ Old (3.7-3.8)
 from typing import Dict, List
 
 def get_headers(self) -> Dict[str, str]:
@@ -100,27 +100,27 @@ def get_cookies(self) -> List[str]:
     return self._cookies
 ```
 
-**Python 3.10+** (futuro, requiere bump):
+**Python 3.10+** (future, requires bump):
 ```python
-# Union types más limpios
-def timeout(self) -> float | None:  # En lugar de Optional[float]
+# Cleaner union types
+def timeout(self) -> float | None:  # Instead of Optional[float]
     return self._timeout
 ```
 
 ### Migration Path
 
-Si en futuro necesitamos features de 3.10+:
+If in the future we need 3.10+ features:
 - Major version bump (breaking change)
-- Documentar en [CHANGELOG.md](../../changes/CHANGELOG.md)
-- Migration guide para usuarios
+- Document in CHANGELOG.md
+- Migration guide for users
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Python 3.8+**: Rechazada. 3.8 EOL en 2024-10.
-2. **Python 3.10+**: Rechazada. Excluye demasiados usuarios.
-3. **Python 3.11+**: Rechazada. Muy reciente.
+1. **Python 3.8+**: Rejected. 3.8 EOL in 2024-10.
+2. **Python 3.10+**: Rejected. Excludes too many users.
+3. **Python 3.11+**: Rejected. Too recent.
 
-### Referencias
+### References
 
 - [Python Release Schedule](https://devguide.python.org/versions/)
 - PEP 596: Python 3.9 Release Schedule

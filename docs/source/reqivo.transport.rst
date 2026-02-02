@@ -3,6 +3,7 @@ reqivo.transport package
 
 .. automodule:: reqivo.transport
    :members:
+   :exclude-members: Connection, AsyncConnection, ConnectionPool, AsyncConnectionPool, Timeout
    :show-inheritance:
    :undoc-members:
 

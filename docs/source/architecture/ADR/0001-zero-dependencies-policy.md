@@ -1,71 +1,71 @@
 # ADR-001: Zero Dependencies Policy
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Los clientes HTTP existentes en Python (`requests`, `httpx`, `aiohttp`) dependen de múltiples librerías externas:
+Existing HTTP clients in Python (`requests`, `httpx`, `aiohttp`) depend on multiple external libraries:
 - `requests`: urllib3, certifi, chardet, idna
 - `httpx`: httpcore, certifi, h11, sniffio
 - `aiohttp`: aiosignal, attrs, frozenlist, multidict, yarl
 
-Esto crea problemas en:
-- **Sistemas embebidos**: Espacio limitado
-- **Aplicaciones de seguridad crítica**: Más dependencias = mayor superficie de ataque
-- **Containers cloud-native**: Minimizar footprint
-- **Auditoría**: Más código para revisar
+This creates problems in:
+- **Embedded systems**: Limited space
+- **Security-critical applications**: More dependencies = larger attack surface
+- **Cloud-native containers**: Minimize footprint
+- **Auditing**: More code to review
 
-### Decisión
+### Decision
 
-**Reqivo NO tendrá dependencias externas en runtime**. Solo usará la biblioteca estándar de Python 3.9+.
+**Reqivo will NOT have external runtime dependencies**. It will only use the Python 3.9+ standard library.
 
-Esto significa:
-- ✅ Solo `import` de módulos stdlib: `socket`, `ssl`, `http`, `json`, etc.
-- ✅ Implementación manual de parsing HTTP/1.1
-- ✅ Implementación manual de WebSocket (RFC 6455)
-- ❌ NO usar: `urllib3`, `h11`, `httpcore`, etc.
-- ❌ NO usar: `certifi` (confiamos en certificados del sistema)
-- ❌ NO usar: `chardet` (usamos stdlib charset detection)
+This means:
+- ✅ Only `import` from stdlib modules: `socket`, `ssl`, `http`, `json`, etc.
+- ✅ Manual implementation of HTTP/1.1 parsing
+- ✅ Manual implementation of WebSocket (RFC 6455)
+- ❌ DO NOT use: `urllib3`, `h11`, `httpcore`, etc.
+- ❌ DO NOT use: `certifi` (we trust system certificates)
+- ❌ DO NOT use: `chardet` (we use stdlib charset detection)
 
-**Dependencias de desarrollo permitidas**:
-- `pytest`, `coverage`, `mypy`, `black`, `isort`, `pylint`, `bandit` (solo dev/CI)
-- `sphinx`, `myst-parser` (solo para docs)
+**Allowed development dependencies**:
+- `pytest`, `coverage`, `mypy`, `black`, `isort`, `pylint`, `bandit` (dev/CI only)
+- `sphinx`, `myst-parser` (docs only)
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Portabilidad máxima**: Funciona donde Python funciona
-2. **Seguridad**: Menor superficie de ataque
-3. **Footprint mínimo**: Ideal para containers y embedded systems
-4. **Sin dependency hell**: No hay conflictos de versiones
-5. **Auditable**: Todo el código es visible y controlable
-6. **Instalación instantánea**: `pip install reqivo` sin descargas extra
+1. **Maximum portability**: Works wherever Python works
+2. **Security**: Smaller attack surface
+3. **Minimal footprint**: Ideal for containers and embedded systems
+4. **No dependency hell**: No version conflicts
+5. **Auditable**: All code is visible and controllable
+6. **Instant installation**: `pip install reqivo` without extra downloads
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Más código propio que mantener**: Parsing HTTP manual
-2. **Re-inventar la rueda**: Funcionalidad ya existente en librerías
-3. **Posibles bugs**: Implementaciones nuevas tienen más riesgo inicial
-4. **Menos features avanzados**: Algunas optimizaciones requieren C extensions
-5. **Desarrollo más lento**: Sin aprovechar código existente
+1. **More code to maintain**: Manual HTTP parsing
+2. **Re-inventing the wheel**: Functionality already exists in libraries
+3. **Potential bugs**: New implementations have higher initial risk
+4. **Fewer advanced features**: Some optimizations require C extensions
+5. **Slower development**: Without leveraging existing code
 
-#### Mitigaciones
+#### Mitigations
 
-- **Cobertura de tests ≥97%**: Para detectar bugs en código propio
-- **Type hints estrictos**: Para prevenir errores
-- **Roadmap conservador**: Priorizar robustez sobre features
-- **Documentación de limitaciones**: Ser transparente sobre trade-offs
+- **Test coverage ≥97%**: To detect bugs in custom code
+- **Strict type hints**: To prevent errors
+- **Conservative roadmap**: Prioritize robustness over features
+- **Documentation of limitations**: Be transparent about trade-offs
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Permitir dependencias opcionales**: Rechazada. Complejiza instalación.
-2. **Solo dependencias puras Python**: Rechazada. Sigue siendo complejidad extra.
-3. **Usar urllib3 como httpx/requests**: Rechazada. Pierde valor diferencial.
+1. **Allow optional dependencies**: Rejected. Complicates installation.
+2. **Only pure Python dependencies**: Rejected. Still adds extra complexity.
+3. **Use urllib3 like httpx/requests**: Rejected. Loses differentiating value.
 
-### Referencias
+### References
 
-- Issue original: (pendiente)
-- Discusión: (pendiente)
+- Original issue: (pending)
+- Discussion: (pending)

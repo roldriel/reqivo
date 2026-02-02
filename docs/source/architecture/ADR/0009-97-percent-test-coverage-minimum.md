@@ -1,45 +1,45 @@
 # ADR-009: 97% Test Coverage Minimum
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Test coverage mide qué % del código es ejecutado por tests. Niveles comunes:
-- 80%: Bueno para proyectos legacy
-- 90%: Muy bueno
-- 95%+: Excelente
-- 100%: Aspiracional, difícil de mantener
+Test coverage measures what % of code is executed by tests. Common levels:
+- 80%: Good for legacy projects
+- 90%: Very good
+- 95%+: Excellent
+- 100%: Aspirational, difficult to maintain
 
-Reqivo es cero dependencias, código crítico (HTTP, TLS, sockets). Bugs pueden causar:
+Reqivo is zero dependencies, critical code (HTTP, TLS, sockets). Bugs can cause:
 - Security issues (header injection, TLS bypass)
 - Data corruption
 - Silent failures
 
-**Tipos de coverage**:
-1. **Statement coverage**: Líneas ejecutadas
-2. **Branch coverage**: Caminos de if/else ejecutados (más estricto)
-3. **Por archivo**: Coverage individual de cada módulo
-4. **Total del proyecto**: Coverage agregado de todos los módulos
+**Coverage types**:
+1. **Statement coverage**: Lines executed
+2. **Branch coverage**: if/else paths executed (more strict)
+3. **Per file**: Individual coverage of each module
+4. **Project total**: Aggregated coverage of all modules
 
-### Decisión
+### Decision
 
-**Mínimo 97% de test coverage total del proyecto, con branch coverage habilitado**.
+**Minimum 97% test coverage of total project, with branch coverage enabled**.
 
 **Coverage Policy**:
 ```
-✅ Prioridad: Coverage TOTAL del proyecto ≥ 97%
-✅ Branch coverage habilitado (--branch)
-⚠️  Coverage por archivo: Meta aspiracional, NO bloqueante
-✅ Excepción: Código defensivo y edge cases no testeables
+✅ Priority: TOTAL project coverage ≥ 97%
+✅ Branch coverage enabled (--branch)
+⚠️  Per-file coverage: Aspirational goal, NOT blocking
+✅ Exception: Defensive code and non-testable edge cases
 ```
 
-Configuración (`pyproject.toml`):
+Configuration (`pyproject.toml`):
 ```toml
 [tool.coverage.run]
 source = ["reqivo"]
-branch = true  # CRÍTICO: Branch coverage habilitado
+branch = true  # CRITICAL: Branch coverage enabled
 omit = [
     "*/__init__.py",
     "tests/*",
@@ -47,7 +47,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 97           # Umbral TOTAL del proyecto
+fail_under = 97           # Project TOTAL threshold
 precision = 2
 show_missing = true
 skip_covered = false
@@ -61,24 +61,24 @@ exclude_lines = [
 directory = "htmlcov"
 ```
 
-**Reglas de Coverage**:
+**Coverage Rules**:
 
-1. **Total del proyecto**:
-   - ✅ DEBE ser ≥97% (bloqueante en CI)
-   - ✅ Medido con branch coverage
-   - ❌ NO merge PRs con coverage total < 97%
+1. **Project total**:
+   - ✅ MUST be ≥97% (blocking in CI)
+   - ✅ Measured with branch coverage
+   - ❌ DO NOT merge PRs with total coverage < 97%
 
-2. **Por archivo individual**:
-   - ⚠️  Meta aspiracional: 90%+ por módulo
-   - ⚠️  NO bloqueante en CI
-   - ✅ Permitido <90% si: código defensivo, edge cases no testeables, platform-specific
+2. **Individual file**:
+   - ⚠️  Aspirational goal: 90%+ per module
+   - ⚠️  NOT blocking in CI
+   - ✅ Allowed <90% if: defensive code, non-testable edge cases, platform-specific
 
 3. **Branch coverage**:
-   - ✅ Habilitado obligatoriamente (`--branch`)
-   - ✅ Más estricto que statement coverage
-   - ✅ Detecta paths no testeados en if/else
+   - ✅ Mandatory enabled (`--branch`)
+   - ✅ Stricter than statement coverage
+   - ✅ Detects untested paths in if/else
 
-**Excepciones permitidas**:
+**Allowed exceptions**:
 ```python
 # Defensive programming
 if some_impossible_condition:  # pragma: no cover
@@ -88,75 +88,75 @@ if some_impossible_condition:  # pragma: no cover
 if sys.platform == "win32":  # pragma: no cover (testing on Linux)
     ...
 
-# Error handling no testeable
+# Non-testable error handling
 except UnicodeDecodeError:  # pragma: no cover
     # iso-8859-1 decoder handles all byte values
     pass
 ```
 
-**Razón para priorizar total vs por-archivo**:
-- Algunos módulos core (connection, session) naturalmente tienen más branches
-- Edge cases y código defensivo difíciles de testear exhaustivamente
-- **Lo importante**: Cobertura global alta garantiza robustez del proyecto
-- Permite flexibilidad en módulos complejos sin comprometer calidad total
+**Reason for prioritizing total vs per-file**:
+- Some core modules (connection, session) naturally have more branches
+- Edge cases and defensive code difficult to test exhaustively
+- **What matters**: High global coverage guarantees project robustness
+- Allows flexibility in complex modules without compromising total quality
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Confidence**: Refactorings seguros
-2. **Bug prevention**: Tests detectan regresiones
-3. **Documentation**: Tests son ejemplos de uso
-4. **API design**: Testing obliga a buena API
-5. **Debugging**: Bugs se replican en tests
+1. **Confidence**: Safe refactorings
+2. **Bug prevention**: Tests detect regressions
+3. **Documentation**: Tests are usage examples
+4. **API design**: Testing enforces good API
+5. **Debugging**: Bugs are replicated in tests
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Desarrollo más lento**: Escribir tests toma tiempo
-2. **Mantenimiento**: Tests también necesitan mantenerse
-3. **False confidence**: 97% no garantiza ausencia de bugs
-4. **Overhead**: Tests complejos pueden ser frágiles
+1. **Slower development**: Writing tests takes time
+2. **Maintenance**: Tests also need maintenance
+3. **False confidence**: 97% doesn't guarantee bug absence
+4. **Overhead**: Complex tests can be fragile
 
-#### Mitigaciones
+#### Mitigations
 
-- **TDD**: Tests primero reduce rework
-- **Fast tests**: Optimizar suite para velocidad
-- **Good fixtures**: Reutilizar setup entre tests
-- **Clear test names**: Tests son documentación
+- **TDD**: Tests first reduces rework
+- **Fast tests**: Optimize suite for speed
+- **Good fixtures**: Reuse setup between tests
+- **Clear test names**: Tests are documentation
 
 ### Test Types
 
-**Requeridos**:
-1. **Unit tests**: Cada función/método aislado
-2. **Integration tests**: Componentes juntos
-3. **Edge cases**: Límites, valores especiales
-4. **Error paths**: Excepciones, timeouts, failures
+**Required**:
+1. **Unit tests**: Each function/method isolated
+2. **Integration tests**: Components together
+3. **Edge cases**: Boundaries, special values
+4. **Error paths**: Exceptions, timeouts, failures
 
-**Deseables**:
-1. **Property-based**: hypothesis para casos aleatorios
-2. **Performance**: Benchmarks para regresiones
-3. **Load tests**: Behavior bajo carga
+**Desirable**:
+1. **Property-based**: hypothesis for random cases
+2. **Performance**: Benchmarks for regressions
+3. **Load tests**: Behavior under load
 
 ### Coverage Report
 
 ```bash
-# Run con coverage
+# Run with coverage
 pytest --cov=reqivo --cov-report=html --cov-report=term
 
-# Verificar threshold
+# Verify threshold
 coverage report --fail-under=97
 
-# Ver HTML report
+# View HTML report
 open htmlcov/index.html
 ```
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **95% threshold**: Rechazada. Permite demasiadas excepciones.
-2. **100% threshold**: Rechazada. Muy difícil mantener.
-3. **No threshold**: Rechazada. Coverage decae con tiempo.
+1. **95% threshold**: Rejected. Allows too many exceptions.
+2. **100% threshold**: Rejected. Very difficult to maintain.
+3. **No threshold**: Rejected. Coverage decays over time.
 
-### Referencias
+### References
 
 - pytest-cov documentation
 - coverage.py documentation

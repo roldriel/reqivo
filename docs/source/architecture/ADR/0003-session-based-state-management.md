@@ -1,95 +1,95 @@
 # ADR-003: Session-Based State Management
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Dos patrones comunes en clientes HTTP:
+Two common patterns in HTTP clients:
 
-1. **Stateless requests** (como `urllib`):
+1. **Stateless requests** (like `urllib`):
    ```python
    response = urllib.request.urlopen(url)
    ```
 
-2. **Stateful sessions** (como `requests`):
+2. **Stateful sessions** (like `requests`):
    ```python
    session = requests.Session()
    session.headers.update({'User-Agent': 'my-app'})
-   response = session.get(url)  # Headers automáticos
+   response = session.get(url)  # Automatic headers
    ```
 
-Necesitamos decidir si Reqivo soporta estado persistente entre requests.
+We need to decide whether Reqivo supports persistent state between requests.
 
-### Decisión
+### Decision
 
-**Implementar Session-based architecture** siguiendo el patrón de `requests`:
+**Implement Session-based architecture** following the `requests` pattern:
 
-- **Session**: Mantiene estado (cookies, headers, auth, connection pool)
-- **Request**: Builder stateless que usa Session si se proporciona
-- **API dual**: Soportar ambos patrones (stateless y stateful)
+- **Session**: Maintains state (cookies, headers, auth, connection pool)
+- **Request**: Stateless builder that uses Session if provided
+- **Dual API**: Support both patterns (stateless and stateful)
 
-Estructura:
+Structure:
 ```python
-# Stateful (recomendado)
+# Stateful (recommended)
 with Session() as session:
     session.set_basic_auth("user", "pass")
     session.headers["User-Agent"] = "MyApp/1.0"
 
-    resp1 = session.get(url1)  # Headers y auth automáticos
-    resp2 = session.get(url2)  # Cookies de resp1 incluidas
-    # Connection pool reutiliza conexiones
+    resp1 = session.get(url1)  # Automatic headers and auth
+    resp2 = session.get(url2)  # Cookies from resp1 included
+    # Connection pool reuses connections
 
 # Stateless (simple)
-response = Request.send("GET", url)  # Sin estado, sin pool
+response = Request.send("GET", url)  # No state, no pool
 ```
 
-**Responsabilidades**:
+**Responsibilities**:
 
 **Session**:
-- ✅ Cookie jar (parsing Set-Cookie, envío automático)
-- ✅ Headers persistentes
+- ✅ Cookie jar (Set-Cookie parsing, automatic sending)
+- ✅ Persistent headers
 - ✅ Authentication (Basic, Bearer)
 - ✅ Connection pooling
-- ✅ Context manager (cleanup automático)
+- ✅ Context manager (automatic cleanup)
 
 **Request**:
-- ✅ Construcción de HTTP request bytes
+- ✅ HTTP request bytes construction
 - ✅ Header injection prevention
-- ✅ Envío de requests
-- ❌ NO mantiene estado
-- ❌ NO tiene connection pool propio
+- ✅ Request sending
+- ❌ Does NOT maintain state
+- ❌ Does NOT have its own connection pool
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Familiar**: Patrón conocido de `requests`
-2. **Eficiente**: Reutilización de conexiones vía pool
-3. **Conveniente**: Headers/cookies/auth automáticos
-4. **Flexible**: Soporta ambos patrones (stateful/stateless)
-5. **Clean separation**: Session = estado, Request = builder
+1. **Familiar**: Known pattern from `requests`
+2. **Efficient**: Connection reuse via pool
+3. **Convenient**: Automatic headers/cookies/auth
+4. **Flexible**: Supports both patterns (stateful/stateless)
+5. **Clean separation**: Session = state, Request = builder
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Complejidad**: Más código que solo stateless
-2. **Estado mutable**: Sessions pueden tener side effects
-3. **Thread safety**: Sessions no son thread-safe por diseño
+1. **Complexity**: More code than stateless only
+2. **Mutable state**: Sessions can have side effects
+3. **Thread safety**: Sessions are not thread-safe by design
 
-#### Mitigaciones
+#### Mitigations
 
-- **Documentar thread safety**: Session por thread
-- **Context managers**: Garantizar cleanup
-- **Stateless API disponible**: Para casos simples
+- **Document thread safety**: One Session per thread
+- **Context managers**: Guarantee cleanup
+- **Stateless API available**: For simple cases
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Solo stateless**: Rechazada. Ineficiente para múltiples requests.
-2. **Solo stateful**: Rechazada. Demasiado overhead para casos simples.
-3. **Global state**: Rechazada. Anti-pattern, dificulta testing.
+1. **Stateless only**: Rejected. Inefficient for multiple requests.
+2. **Stateful only**: Rejected. Too much overhead for simple cases.
+3. **Global state**: Rejected. Anti-pattern, makes testing difficult.
 
-### Referencias
+### References
 
 - requests.Session documentation
 - HTTP State Management (RFC 6265)

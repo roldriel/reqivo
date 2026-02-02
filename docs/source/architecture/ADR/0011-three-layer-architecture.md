@@ -1,10 +1,10 @@
 # ADR-011: Three-Layer Architecture
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Estado**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
 Arquitectura de cliente HTTP puede organizarse de varias formas:
 
@@ -13,7 +13,7 @@ Arquitectura de cliente HTTP puede organizarse de varias formas:
 3. **Three-layer**: Client + Protocol + Transport
 4. **Multi-layer**: Muchas capas de abstracción
 
-### Decisión
+### Decision
 
 **Arquitectura de 3 capas claramente separadas**:
 
@@ -62,9 +62,9 @@ src/reqivo/
     └── validators.py
 ```
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Clear separation**: Cada capa tiene propósito definido
 2. **Testability**: Mockear capas inferiores fácilmente
@@ -72,13 +72,13 @@ src/reqivo/
 4. **Maintainability**: Cambios localizados en capa correcta
 5. **Understandability**: Estructura clara para nuevos devs
 
-#### Negativas ❌
+#### Negative ❌
 
 1. **Indirection**: Más archivos, más imports
 2. **Over-engineering**: Puede ser excesivo para proyecto pequeño
 3. **Coupling**: Capas deben coordinarse cuidadosamente
 
-#### Mitigaciones
+#### Mitigations
 
 - **Clear interfaces**: Cada capa con API bien definida
 - **Documentation**: Arquitectura documentada en ADR (este doc)
@@ -104,13 +104,13 @@ src/reqivo/
 - Timeout enforcement
 - Conexión física a servidor
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Monolithic**: Rechazada. Difícil mantener y testear.
-2. **Two-layer**: Rechazada. Protocol y transport muy acoplados.
-3. **Four+ layers**: Rechazada. Over-engineering innecesario.
+1. **Monolithic**: Rejected. Difícil mantener y testear.
+2. **Two-layer**: Rejected. Protocol y transport muy acoplados.
+3. **Four+ layers**: Rejected. Over-engineering innecesario.
 
-### Referencias
+### References
 
 - Clean Architecture (Robert C. Martin)
 - Layered Architecture Pattern

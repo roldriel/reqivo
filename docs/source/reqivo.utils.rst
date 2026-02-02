@@ -3,6 +3,7 @@ reqivo.utils package
 
 .. automodule:: reqivo.utils
    :members:
+   :exclude-members: Timeout
    :show-inheritance:
    :undoc-members:
 

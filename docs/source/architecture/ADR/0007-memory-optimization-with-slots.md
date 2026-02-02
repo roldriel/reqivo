@@ -1,39 +1,39 @@
 # ADR-007: Memory Optimization with `__slots__`
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Python objects usan `__dict__` para atributos, que consume memoria:
-- `__dict__` es dinámico, permite añadir atributos en runtime
-- Cada instancia tiene overhead de ~240 bytes (Python 3.9+)
-- Para objetos frecuentemente instanciados, esto suma
+Python objects use `__dict__` for attributes, which consumes memory:
+- `__dict__` is dynamic, allows adding attributes at runtime
+- Each instance has overhead of ~240 bytes (Python 3.9+)
+- For frequently instantiated objects, this adds up
 
-`__slots__` es una optimización:
-- Define atributos fijos en clase
-- No usa `__dict__`, reduce memoria ~40%
-- Acceso a atributos es más rápido
-- Trade-off: no se pueden añadir atributos dinámicos
+`__slots__` is an optimization:
+- Defines fixed attributes in class
+- Doesn't use `__dict__`, reduces memory by ~40%
+- Attribute access is faster
+- Trade-off: cannot add dynamic attributes
 
-### Decisión
+### Decision
 
-**Usar `__slots__` en clases frecuentemente instanciadas**:
+**Use `__slots__` in frequently instantiated classes**:
 
-Clases con `__slots__`:
-- ✅ `Response` (una por request)
-- ✅ `Request` (una por request)
-- ✅ `Connection` (muchas en pool)
-- ✅ `Timeout` (una por request)
-- ✅ `Headers` (una por request)
+Classes with `__slots__`:
+- ✅ `Response` (one per request)
+- ✅ `Request` (one per request)
+- ✅ `Connection` (many in pool)
+- ✅ `Timeout` (one per request)
+- ✅ `Headers` (one per request)
 
-Clases sin `__slots__`:
-- ❌ `Session` (pocas instancias, mutable por diseño)
-- ❌ `ConnectionPool` (una por session)
-- ❌ Exceptions (raramente instanciadas)
+Classes without `__slots__`:
+- ❌ `Session` (few instances, mutable by design)
+- ❌ `ConnectionPool` (one per session)
+- ❌ Exceptions (rarely instantiated)
 
-Ejemplo:
+Example:
 ```python
 class Response:
     __slots__ = (
@@ -52,53 +52,53 @@ class Response:
         # ...
 ```
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Memoria**: ~40% menos memoria por instancia
-2. **Performance**: Acceso a atributos más rápido
-3. **Cache locality**: Mejor CPU cache utilization
-4. **Type hints**: Atributos declarados explícitamente
-5. **Bugs prevention**: No se pueden añadir typos como atributos
+1. **Memory**: ~40% less memory per instance
+2. **Performance**: Faster attribute access
+3. **Cache locality**: Better CPU cache utilization
+4. **Type hints**: Attributes declared explicitly
+5. **Bugs prevention**: Cannot add typos as attributes
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Rigidez**: No se pueden añadir atributos dinámicos
-2. **Debugging**: Algunos debuggers asumen `__dict__`
-3. **Monkey patching**: No se puede (feature, no bug)
-4. **Herencia**: Subclasses deben declarar sus propios `__slots__`
+1. **Rigidity**: Cannot add dynamic attributes
+2. **Debugging**: Some debuggers assume `__dict__`
+3. **Monkey patching**: Not possible (feature, not bug)
+4. **Inheritance**: Subclasses must declare their own `__slots__`
 
-#### Mitigaciones
+#### Mitigations
 
-- **Solo en clases estables**: No usar en clases experimentales
-- **Documentar**: Indicar que clase usa `__slots__`
-- **Testing**: Verificar que no se intenten añadir atributos
+- **Only in stable classes**: Don't use in experimental classes
+- **Document**: Indicate that class uses `__slots__`
+- **Testing**: Verify that no attributes are attempted to be added
 
 ### Memory Savings
 
-Estimación (Python 3.9+):
+Estimation (Python 3.9+):
 
 ```python
-# Sin __slots__
+# Without __slots__
 Response object: ~280 bytes + data
 
-# Con __slots__
+# With __slots__
 Response object: ~170 bytes + data
 
-# Para 10,000 requests:
-Sin __slots__: ~2.8 MB
-Con __slots__:  ~1.7 MB
-Ahorro:         ~1.1 MB (39%)
+# For 10,000 requests:
+Without __slots__: ~2.8 MB
+With __slots__:    ~1.7 MB
+Savings:           ~1.1 MB (39%)
 ```
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **No usar __slots__**: Rechazada. Desperdicia memoria innecesariamente.
-2. **Usar __slots__ en todo**: Rechazada. Dificulta extensibilidad.
-3. **Usar dataclasses frozen**: Considerada. Menos control que __slots__.
+1. **Don't use __slots__**: Rejected. Wastes memory unnecessarily.
+2. **Use __slots__ everywhere**: Rejected. Makes extensibility difficult.
+3. **Use frozen dataclasses**: Considered. Less control than __slots__.
 
-### Referencias
+### References
 
 - [Python __slots__ documentation](https://docs.python.org/3/reference/datamodel.html#slots)
 - [Memory savings with __slots__](https://wiki.python.org/moin/UsingSlots)

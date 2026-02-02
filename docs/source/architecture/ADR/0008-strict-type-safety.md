@@ -1,27 +1,27 @@
 # ADR-008: Strict Type Safety
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Status**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
-Python permite programación dinámica sin tipos, pero type hints (PEP 484+) ofrecen:
-- Catch de bugs en desarrollo
-- IDE autocomplete y refactoring
-- Documentación viva
-- Mejor mantenibilidad
+Python allows dynamic programming without types, but type hints (PEP 484+) offer:
+- Bug catching during development
+- IDE autocomplete and refactoring
+- Living documentation
+- Better maintainability
 
-Niveles de strictness en mypy:
-1. **No types**: No verificación
-2. **Basic**: Tipos opcionales, permisivo
-3. **Strict**: Todos los tipos requeridos, no `Any`
+Strictness levels in mypy:
+1. **No types**: No verification
+2. **Basic**: Optional types, permissive
+3. **Strict**: All types required, no `Any`
 
-### Decisión
+### Decision
 
-**Usar mypy en modo strict con type hints completos**.
+**Use mypy in strict mode with complete type hints**.
 
-Configuración (`pyproject.toml`):
+Configuration (`pyproject.toml`):
 ```toml
 [tool.mypy]
 strict = true
@@ -34,17 +34,17 @@ warn_redundant_casts = true
 warn_unreachable = true
 ```
 
-**Reglas**:
-- ✅ Todos los parámetros con tipos
-- ✅ Todos los returns con tipos
-- ✅ Evitar `Any` (usar genéricos o Union)
-- ✅ Type hints en variables cuando no se infiere
-- ❌ NO usar `# type: ignore` sin justificación
-- ❌ NO usar `cast()` innecesariamente
+**Rules**:
+- ✅ All parameters with types
+- ✅ All returns with types
+- ✅ Avoid `Any` (use generics or Union)
+- ✅ Type hints in variables when not inferred
+- ❌ DO NOT use `# type: ignore` without justification
+- ❌ DO NOT use `cast()` unnecessarily
 
-Ejemplo:
+Example:
 ```python
-# ✅ CORRECTO
+# ✅ CORRECT
 def send_request(
     url: str,
     headers: Optional[Dict[str, str]] = None,
@@ -52,56 +52,56 @@ def send_request(
 ) -> Response:
     ...
 
-# ❌ INCORRECTO
+# ❌ INCORRECT
 def send_request(url, headers=None, timeout=None):  # No types
     ...
 
-# ❌ INCORRECTO
-def send_request(url: Any, headers: Any = None) -> Any:  # Any abusado
+# ❌ INCORRECT
+def send_request(url: Any, headers: Any = None) -> Any:  # Any abused
     ...
 ```
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
-1. **Bug prevention**: Catch errores en desarrollo, no en runtime
+1. **Bug prevention**: Catch errors in development, not at runtime
 2. **IDE support**: Autocomplete, go-to-definition, refactoring
-3. **Documentation**: Tipos son documentación ejecutable
-4. **Refactoring safety**: Cambios no rompen contratos
-5. **Onboarding**: Nuevos devs entienden API más rápido
-6. **PEP 561 compliance**: Distribución de type stubs
+3. **Documentation**: Types are executable documentation
+4. **Refactoring safety**: Changes don't break contracts
+5. **Onboarding**: New devs understand API faster
+6. **PEP 561 compliance**: Distribution of type stubs
 
-#### Negativas ❌
+#### Negative ❌
 
-1. **Verbosidad**: Código más largo
-2. **Learning curve**: Type hints avanzados son complejos
-3. **Mantenimiento**: Tipos deben actualizarse con código
-4. **CI time**: mypy añade tiempo al pipeline
+1. **Verbosity**: Longer code
+2. **Learning curve**: Advanced type hints are complex
+3. **Maintenance**: Types must be updated with code
+4. **CI time**: mypy adds time to pipeline
 
-#### Mitigaciones
+#### Mitigations
 
-- **Generics**: Usar `TypeVar` para flexibilidad
-- **Protocols**: Para duck typing type-safe
-- **Overload**: Para signatures complejas
-- **Documentation**: Guía de type hints para contributors
+- **Generics**: Use `TypeVar` for flexibility
+- **Protocols**: For type-safe duck typing
+- **Overload**: For complex signatures
+- **Documentation**: Type hints guide for contributors
 
 ### Type Coverage
 
 Target: 100% type coverage
 
 ```bash
-# Verificar coverage
+# Verify coverage
 mypy --strict src/reqivo
 ```
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **No types**: Rechazada. Pierde beneficios de type safety.
-2. **Partial types**: Rechazada. Inconsistencia confunde.
-3. **Gradual typing**: Rechazada. Proyecto nuevo, empezar strict.
+1. **No types**: Rejected. Loses type safety benefits.
+2. **Partial types**: Rejected. Inconsistency causes confusion.
+3. **Gradual typing**: Rejected. New project, start strict.
 
-### Referencias
+### References
 
 - PEP 484: Type Hints
 - PEP 561: Distributing Type Information

@@ -1,10 +1,10 @@
 # ADR-014: Test Structure Organization
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Estado**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
 Testing puede organizarse de varias formas:
 
@@ -17,7 +17,7 @@ Reqivo necesita:
 - Integration tests para flujos completos
 - Mapeo claro código ↔ tests
 
-### Decisión
+### Decision
 
 **Estructura organizada por tipo con mirror de src/**:
 
@@ -88,9 +88,9 @@ tests/
    - Fixtures comunes en `tests/utils/fixtures.py`
    - Fixtures específicas en conftest.py local
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Findability**: Fácil encontrar tests para un módulo
 2. **Completeness**: Detectar módulos sin tests
@@ -98,13 +98,13 @@ tests/
 4. **Scalability**: Estructura crece con proyecto
 5. **Clear mapping**: 1:1 entre source y test files
 
-#### Negativas ❌
+#### Negative ❌
 
 1. **Duplicate structure**: Dos árboles de directorios (src + tests)
 2. **Renaming overhead**: Renombrar módulo requiere renombrar test
 3. **Large test files**: Módulos grandes → test files grandes
 
-#### Mitigaciones
+#### Mitigations
 
 - **Split large tests**: Dividir por funcionalidad si es muy grande
 - **Shared utilities**: Reutilizar fixtures y helpers
@@ -150,13 +150,13 @@ def test_connection_pool_reuses_connections():
 - ❌ `tests/unit/test_auth.py`
 - ❌ `tests/integration/*` (todos)
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **Flat structure**: Rechazada. Difícil escalar.
-2. **By feature**: Rechazada. Ambiguo qué es una "feature".
-3. **Colocated tests**: Rechazada. Mezcla concerns.
+1. **Flat structure**: Rejected. Difícil escalar.
+2. **By feature**: Rejected. Ambiguo qué es una "feature".
+3. **Colocated tests**: Rejected. Mezcla concerns.
 
-### Referencias
+### References
 
 - pytest documentation: Test layout
 - Python Packaging Guide

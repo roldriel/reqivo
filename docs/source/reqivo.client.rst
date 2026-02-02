@@ -3,6 +3,7 @@ reqivo.client package
 
 .. automodule:: reqivo.client
    :members:
+   :exclude-members: Session, AsyncSession, Request, AsyncRequest, Response, WebSocket, AsyncWebSocket
    :show-inheritance:
    :undoc-members:
 

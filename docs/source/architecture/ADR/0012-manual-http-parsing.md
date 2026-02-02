@@ -1,10 +1,10 @@
 # ADR-012: Manual HTTP Parsing
 
-**Estado**: ✅ Aceptada
-**Fecha**: 2026-01-29
+**Estado**: ✅ Accepted
+**Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Contexto
+### Context
 
 Para parsear HTTP responses, opciones:
 
@@ -17,7 +17,7 @@ Consideraciones:
 - stdlib `http.client` es sync-only y algo limitado
 - Manual parsing da control total
 
-### Decisión
+### Decision
 
 **Implementar parser HTTP/1.1 manual en `reqivo.http.http11`**.
 
@@ -54,9 +54,9 @@ class HttpParser:
 - ❌ NO multiline headers (obs-fold obsoleto)
 - ❌ NO auto-decompression (gzip, br) en v0.1.x
 
-### Consecuencias
+### Consequences
 
-#### Positivas ✅
+#### Positive ✅
 
 1. **Control total**: Customizar parsing a necesidades
 2. **Zero deps**: Cumple ADR-001
@@ -64,14 +64,14 @@ class HttpParser:
 4. **Optimizable**: Podemos optimizar bottlenecks
 5. **Educational**: Entendemos HTTP en profundidad
 
-#### Negativas ❌
+#### Negative ❌
 
 1. **Más código**: Parser no trivial (~150 LOC)
 2. **Bugs potenciales**: Implementación nueva tiene riesgo
 3. **Mantenimiento**: Debemos mantener compliance con RFC
 4. **Edge cases**: Servidores raros pueden romper parser
 
-#### Mitigaciones
+#### Mitigations
 
 - **Tests exhaustivos**: 97%+ coverage en parser
 - **RFC compliance tests**: Test against known responses
@@ -123,13 +123,13 @@ class HttpParser:
         self.max_body_size = max_body_size
 ```
 
-### Alternativas Consideradas
+### Alternatives Considered
 
-1. **http.client**: Rechazada. Sync-only, menos control.
-2. **h11**: Rechazada. External dependency.
-3. **Regex-based**: Rechazada. Más lento, más complejo.
+1. **http.client**: Rejected. Sync-only, menos control.
+2. **h11**: Rejected. External dependency.
+3. **Regex-based**: Rejected. Más lento, más complejo.
 
-### Referencias
+### References
 
 - RFC 7230: HTTP/1.1 Message Syntax
 - RFC 7231: HTTP/1.1 Semantics
