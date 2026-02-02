@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.utils.timing module."""
+"""tests/unit/test_timing.py"""
 
 from reqivo.utils.timing import Timeout
 

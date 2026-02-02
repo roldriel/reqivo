@@ -1,4 +1,4 @@
-"""core/http_parser.py
+"""src/reqivo/http/http11.py
 
 Robust HTTP Parser implementation.
 """

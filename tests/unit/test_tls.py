@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.transport.tls module."""
+"""tests/unit/test_tls.py"""
 
 import ssl
 

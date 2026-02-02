@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.http.url module."""
+"""tests/unit/test_url.py"""
 
 from reqivo.http.url import URL
 

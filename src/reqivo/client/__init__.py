@@ -1,4 +1,4 @@
-"""client/__init__.py"""
+"""src/reqivo/client/__init__.py"""
 
 from .auth import build_basic_auth_header, build_bearer_auth_header
 from .request import AsyncRequest, Request

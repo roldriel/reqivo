@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.http.body module."""
+"""tests/unit/test_body.py"""
 
 from unittest import mock
 

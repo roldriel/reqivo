@@ -1,4 +1,6 @@
-"""Unit tests for reqivo.http.http11.HttpParser module.
+"""tests/unit/test_http_parser.py
+
+Unit tests for reqivo.http.http11.HttpParser module.
 
 This module provides comprehensive test coverage for the HTTP/1.1 parser implementation,
 ensuring robust parsing of HTTP responses including status lines, headers, and body data.

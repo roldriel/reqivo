@@ -1,4 +1,4 @@
-"""transport/connection_pool.py
+"""src/reqivo/transport/connection_pool.py
 
 Connection pooling module.
 
@@ -24,6 +24,8 @@ class ConnectionPool:
     This implementation is thread-safe and supports multiple connections
     per host.
     """
+
+    __slots__ = ("_pool", "_lock", "max_size")
 
     def __init__(self, max_size: int = 10) -> None:
         """
@@ -129,6 +131,8 @@ class AsyncConnectionPool:
     """
     Pool of reusable asynchronous connections.
     """
+
+    __slots__ = ("_pool", "max_size")
 
     def __init__(self, max_size: int = 10):
         # Key -> List of connections

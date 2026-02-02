@@ -175,7 +175,7 @@ def test_response_iter_content_with_content_length():
     class MockConnection:
         def __init__(self):
             self.sock = mock.Mock()
-            # Simula lectura de contenido adicional
+            # Simulate reading additional content
             self.sock.recv.side_effect = [b"More ", b"data", b""]
 
         def close(self):
@@ -186,7 +186,7 @@ def test_response_iter_content_with_content_length():
     resp = Response(raw, connection=conn, stream=True)
 
     chunks = list(resp.iter_content())
-    # Debería leer hasta que el socket se cierre
+    # Should read until the socket closes
     assert b"".join(chunks) == b"More data"
 
 
@@ -196,7 +196,7 @@ def test_response_iter_content_no_length_no_chunked():
     class MockConnection:
         def __init__(self):
             self.sock = mock.Mock()
-            # Lee hasta que la conexión se cierre
+            # Read until the connection closes
             self.sock.recv.side_effect = [b"Some ", b"content", b""]
 
         def close(self):

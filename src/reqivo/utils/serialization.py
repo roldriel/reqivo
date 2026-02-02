@@ -1,4 +1,4 @@
-"""utils/serialization.py
+"""src/reqivo/utils/serialization.py
 
 Serialization utilities for Reqivo (JSON, form-urlencode, etc.).
 """

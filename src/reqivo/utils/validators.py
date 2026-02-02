@@ -1,4 +1,4 @@
-"""utils/validators.py
+"""src/reqivo/utils/validators.py
 
 Validation utilities for Reqivo.
 """

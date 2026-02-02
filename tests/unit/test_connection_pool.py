@@ -1,4 +1,6 @@
-"""Unit tests for reqivo.transport.connection_pool module.
+"""tests/unit/test_connection_pool.py
+
+Unit tests for reqivo.transport.connection_pool module.
 
 Test Coverage:
     - ConnectionPool and AsyncConnectionPool initialization

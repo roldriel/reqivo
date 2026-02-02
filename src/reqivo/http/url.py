@@ -1,4 +1,4 @@
-"""http/url.py
+"""src/reqivo/http/url.py
 
 URL builder and parser for Reqivo.
 """
@@ -8,6 +8,8 @@ import urllib.parse
 
 class URL:
     """Utility class for URL parsing and information."""
+
+    __slots__ = ("parsed", "scheme", "host", "port", "path")
 
     def __init__(self, url: str):
         self.parsed = urllib.parse.urlparse(url)

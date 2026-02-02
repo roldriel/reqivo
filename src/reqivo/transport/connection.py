@@ -1,4 +1,4 @@
-"""transport/connection.py
+"""src/reqivo/transport/connection.py
 
 TCP and TLS connection management module.
 
@@ -37,6 +37,8 @@ class Connection:
         timeout: Connection timeout configuration.
         sock: The underlying socket object.
     """
+
+    __slots__ = ("host", "port", "use_ssl", "timeout", "sock")
 
     def __init__(
         self,
@@ -178,6 +180,8 @@ class AsyncConnection:
     """
     Manages asynchronous TCP and TLS connection creation and lifecycle.
     """
+
+    __slots__ = ("host", "port", "use_ssl", "timeout", "reader", "writer")
 
     def __init__(
         self,

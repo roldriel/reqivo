@@ -1,4 +1,4 @@
-"""exceptions.py
+"""src/reqivo/exceptions.py
 
 Reqivo Exceptions hierarchy.
 """

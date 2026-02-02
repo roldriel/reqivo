@@ -1,4 +1,4 @@
-"""core/timeouts.py
+"""src/reqivo/utils/timing.py
 
 Timeouts configuration.
 """

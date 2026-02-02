@@ -1,4 +1,4 @@
-"""client/auth.py
+"""src/reqivo/client/auth.py
 
 Authentication helpers for Reqivo.
 """

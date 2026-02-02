@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.http.headers module."""
+"""tests/unit/test_headers.py"""
 
 from reqivo.http.headers import Headers
 

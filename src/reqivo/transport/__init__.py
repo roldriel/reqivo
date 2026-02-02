@@ -1,4 +1,4 @@
-"""transport/__init__.py
+"""src/reqivo/transport/__init__.py
 
 Transport layer module for Reqivo.
 

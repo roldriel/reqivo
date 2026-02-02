@@ -1,4 +1,6 @@
-"""Unit tests for reqivo.client.websocket module.
+"""tests/unit/test_websocket.py
+
+Unit tests for reqivo.client.websocket module.
 
 Test Coverage:
     - WebSocket handshake (RFC 6455 compliance)

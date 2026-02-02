@@ -1,4 +1,4 @@
-"""utils/websocket_utils.py
+"""src/reqivo/utils/websocket_utils.py
 
 WebSocket utilities for Reqivo.
 """

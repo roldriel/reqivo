@@ -1,4 +1,4 @@
-"""client/response.py
+"""src/reqivo/client/response.py
 
 HTTP Response handling module.
 

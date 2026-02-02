@@ -1,4 +1,6 @@
-"""Unit tests for reqivo.transport.connection module.
+"""tests/unit/test_connection.py
+
+Unit tests for reqivo.transport.connection module.
 
 This module provides comprehensive test coverage for Connection and AsyncConnection classes,
 which handle low-level TCP and TLS connection management.

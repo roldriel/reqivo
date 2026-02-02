@@ -1,1 +1,1 @@
-"""Unit tests for Reqivo."""
+"""tests/unit/__init__.py"""

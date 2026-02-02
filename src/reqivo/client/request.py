@@ -1,4 +1,4 @@
-"""client/request.py
+"""src/reqivo/client/request.py
 
 HTTP request builder and sender.
 """

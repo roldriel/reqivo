@@ -1,4 +1,4 @@
-"""core/constants.py
+"""src/reqivo/http/status_codes.py
 
 HTTP constants module.
 

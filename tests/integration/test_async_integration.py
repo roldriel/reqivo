@@ -1,4 +1,6 @@
-"""Integration tests for async HTTP client functionality.
+"""tests/integration/test_async_integration.py
+
+Integration tests for async HTTP client functionality.
 
 These tests validate async operations using a local HTTP test server.
 """

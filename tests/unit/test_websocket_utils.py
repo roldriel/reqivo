@@ -1,4 +1,4 @@
-"""Unit tests for reqivo.utils.websocket_utils module."""
+"""tests/unit/test_websocket_utils.py"""
 
 import struct
 

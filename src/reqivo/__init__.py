@@ -1,4 +1,4 @@
-"""__init__.py
+"""src/reqivo/__init__.py
 
 Reqivo - Modern, async-first HTTP client library for Python.
 

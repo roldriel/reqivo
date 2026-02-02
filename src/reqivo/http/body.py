@@ -1,4 +1,4 @@
-"""http/body.py
+"""src/reqivo/http/body.py
 
 HTTP body management (chunked, fixed-length, streaming) for Reqivo.
 """
