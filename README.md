@@ -136,24 +136,20 @@ ws.close()
 | Coverage tested ≥ 97%                   | ✅     | ❓       | ✅    | ❓      |
 | Standard library only                   | ✅     | ❌       | ❌    | ❌      |
 
-> **See the numbers yourself:** For detailed performance metrics, check out our **[Benchmark Suite](https://github.com/roldriel/reqivo/blob/main/benchmarks/README.md)**.
+> **Note:** Benchmark suite coming soon in a future release.
 
 ---
 
 ## 📚 Documentation & Examples
 
-Comprehensive examples and documentation are available:
+Comprehensive examples and documentation are available in the **[Examples Directory](https://github.com/roldriel/reqivo/blob/main/examples/README.md)**:
 
-### 📖 Core Examples
+### 📖 Guides
 - **[Quick Start](https://github.com/roldriel/reqivo/blob/main/examples/quick_start.md)** - Installation, basic GET/POST, async introduction
-- **[Advanced Patterns](https://github.com/roldriel/reqivo/blob/main/examples/advanced_patterns.md)** - Connection pooling, headers, timeouts, cookies
-- **[Async Usage](https://github.com/roldriel/reqivo/blob/main/examples/async_usage.md)** - Concurrent requests, async patterns, error handling
-
-### 🔗 More Examples (Coming Soon)
-- WebSocket usage
-- Error handling strategies
-- Authentication patterns
-- Real-world scenarios
+- **[Async Patterns](https://github.com/roldriel/reqivo/blob/main/examples/async_patterns.md)** - Concurrent requests, async patterns
+- **[Session Management](https://github.com/roldriel/reqivo/blob/main/examples/session_management.md)** - Cookies, authentication, persistent connections
+- **[Error Handling](https://github.com/roldriel/reqivo/blob/main/examples/error_handling.md)** - Exception handling, retry logic, circuit breaker
+- **[Advanced Usage](https://github.com/roldriel/reqivo/blob/main/examples/advanced_usage.md)** - Connection pooling, streaming, WebSockets
 
 ---
 
@@ -173,37 +169,30 @@ tox -e py312
 coverage html && open htmlcov/index.html
 ```
 
-### Run Benchmarks
-
-```bash
-cd benchmarks
-pip install -r comparison_requirements.txt
-python comparison.py
-```
-
 ---
 
 ## 📖 Requirements
 
 - Python 3.9 or higher
 - No external dependencies for core functionality
-- Optional: `pympler` for memory benchmarks
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/roldriel/reqivo/blob/main/CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## 📝 License
 
 MIT © 2026 — Rodrigo Ezequiel Roldán  
-[View full license](LICENSE.md)
+[View full license](https://github.com/roldriel/reqivo/blob/main/LICENSE.md)
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap & Changelog
 
-See our detailed [ROADMAP.md](docs/architecture/ROADMAP.md) for planned features and development timeline.
+- **[CHANGELOG](https://github.com/roldriel/reqivo/blob/main/CHANGELOG.md)** - Version history and release notes
+- **[GitHub Issues](https://github.com/roldriel/reqivo/issues)** - Bug reports and feature requests
+- **[Milestones](https://github.com/roldriel/reqivo/milestones)** - Planned features and development timeline
