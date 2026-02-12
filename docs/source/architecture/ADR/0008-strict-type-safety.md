@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Python allows dynamic programming without types, but type hints (PEP 484+) offer:
 - Bug catching during development
@@ -17,7 +17,7 @@ Strictness levels in mypy:
 2. **Basic**: Optional types, permissive
 3. **Strict**: All types required, no `Any`
 
-### Decision
+## Decision
 
 **Use mypy in strict mode with complete type hints**.
 
@@ -61,7 +61,7 @@ def send_request(url: Any, headers: Any = None) -> Any:  # Any abused
     ...
 ```
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -95,13 +95,13 @@ Target: 100% type coverage
 mypy --strict src/reqivo
 ```
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **No types**: Rejected. Loses type safety benefits.
 2. **Partial types**: Rejected. Inconsistency causes confusion.
 3. **Gradual typing**: Rejected. New project, start strict.
 
-### References
+## References
 
 - PEP 484: Type Hints
 - PEP 561: Distributing Type Information

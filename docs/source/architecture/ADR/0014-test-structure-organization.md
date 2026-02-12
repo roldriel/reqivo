@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Testing puede organizarse de varias formas:
 
@@ -17,7 +17,7 @@ Reqivo necesita:
 - Integration tests para flujos completos
 - Mapeo claro código ↔ tests
 
-### Decision
+## Decision
 
 **Estructura organizada por tipo con mirror de src/**:
 
@@ -88,7 +88,7 @@ tests/
    - Fixtures comunes en `tests/utils/fixtures.py`
    - Fixtures específicas en conftest.py local
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -150,13 +150,13 @@ def test_connection_pool_reuses_connections():
 - ❌ `tests/unit/test_auth.py`
 - ❌ `tests/integration/*` (todos)
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Flat structure**: Rejected. Difícil escalar.
 2. **By feature**: Rejected. Ambiguo qué es una "feature".
 3. **Colocated tests**: Rejected. Mezcla concerns.
 
-### References
+## References
 
 - pytest documentation: Test layout
 - Python Packaging Guide

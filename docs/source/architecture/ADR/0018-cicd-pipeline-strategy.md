@@ -4,7 +4,7 @@
 **Date**: 2026-02-11
 **Deciders**: Rodrigo Roldan
 
-### Context
+## Context
 
 As the project grows, automated quality checks become critical to prevent
 regressions. Key questions:
@@ -13,7 +13,7 @@ regressions. Key questions:
 2. How to balance thoroughness vs CI execution time?
 3. How to structure reusable CI components?
 
-### Decision
+## Decision
 
 **Three GitHub Actions workflows** with a shared composite action library:
 
@@ -49,7 +49,7 @@ All jobs (except validate) are conditional on source code changes via path filte
 | **setup-python** | Python setup with pip caching and optional tox install |
 | **security-scan** | Bandit + pip-audit with configurable severity thresholds |
 
-### Consequences
+## Consequences
 
 #### Positive
 
@@ -71,13 +71,13 @@ All jobs (except validate) are conditional on source code changes via path filte
 - Jobs run in parallel where possible
 - Composite actions centralize tool setup logic
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Single workflow**: Rejected. Too slow, no parallel execution.
 2. **External CI (Jenkins, CircleCI)**: Rejected. GitHub Actions is simpler for GitHub-hosted projects.
 3. **Pre-commit hooks only**: Rejected. Insufficient for multi-version testing.
 
-### References
+## References
 
 - GitHub Actions documentation
 - pypa/gh-action-pypi-publish (trusted publishing)

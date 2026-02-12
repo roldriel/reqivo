@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Opciones de protocolo HTTP a soportar:
 
@@ -17,7 +17,7 @@ Opciones de protocolo HTTP a soportar:
 - HTTP/2: Requiere HPACK, multiplexing, binary frames, flow control
 - HTTP/3: Requiere QUIC stack completo
 
-### Decision
+## Decision
 
 **Implementar HTTP/1.1 completo y robusto ANTES de HTTP/2**.
 
@@ -45,7 +45,7 @@ v2.0.0+:         HTTP/3 (maybe)
 - Flow control
 - Priority
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -67,13 +67,13 @@ v2.0.0+:         HTTP/3 (maybe)
 - **Documentar limitación**: Ser transparente sobre HTTP/1.1 only
 - **Connection pooling**: Mitiga parcialmente lack de multiplexing
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **HTTP/2 desde día 1**: Rejected. Demasiada complejidad inicial.
 2. **Solo HTTP/1.1 forever**: Rejected. HTTP/2 es futuro.
 3. **HTTP/3 primero**: Rejected. Extremadamente complejo.
 
-### References
+## References
 
 - RFC 7230-7235: HTTP/1.1
 - RFC 7540: HTTP/2

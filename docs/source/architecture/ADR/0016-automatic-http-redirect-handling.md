@@ -4,7 +4,7 @@
 **Date**: 2026-02-11
 **Deciders**: Rodrigo Roldan
 
-### Context
+## Context
 
 HTTP clients must decide how to handle redirect responses (3xx status codes).
 Key questions:
@@ -17,7 +17,7 @@ Key questions:
 - RFC 7231 (HTTP/1.1 Semantics): Defines redirect status codes
 - RFC 7538: 308 Permanent Redirect
 
-### Decision
+## Decision
 
 **Automatic redirect following is enabled by default** with configurable behavior.
 
@@ -44,7 +44,7 @@ Key questions:
 - If a URL is visited twice, `RedirectLoopError` is raised immediately
 - This catches cycles (A -> B -> A) before reaching `max_redirects`
 
-### Consequences
+## Consequences
 
 #### Positive
 
@@ -64,13 +64,13 @@ Key questions:
 - Response history accessible for debugging redirect chains
 - `max_redirects` prevents runaway chains
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Manual redirects only**: Rejected. Poor DX, every client would need redirect logic.
 2. **Always preserve method**: Rejected. Violates RFC 7231 and causes unintended POST replays.
 3. **No cycle detection**: Rejected. `max_redirects` alone is too slow for tight loops.
 
-### References
+## References
 
 - RFC 7231 Section 6.4 (Redirection)
 - RFC 7538 (308 Permanent Redirect)

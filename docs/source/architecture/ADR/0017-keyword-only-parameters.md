@@ -4,7 +4,7 @@
 **Date**: 2026-02-11
 **Deciders**: Rodrigo Roldan
 
-### Context
+## Context
 
 Session request methods (`post`, `put`, `patch`, `delete`) accept multiple optional
 parameters: `headers`, `body`, `timeout`, `limits`. Two API design options:
@@ -21,7 +21,7 @@ session.post("http://example.com", "my data")
 session.post("http://example.com", None, "my data", None, {"max_body_size": 1024})
 ```
 
-### Decision
+## Decision
 
 **All optional parameters after `url` are keyword-only** (enforced via `*` separator).
 
@@ -46,7 +46,7 @@ class Session:
 - Methods with `body` (`post`, `put`, `patch`, `delete`) use keyword-only args
 - `pylint: disable=too-many-arguments` is acceptable for these methods
 
-### Consequences
+## Consequences
 
 #### Positive
 
@@ -65,13 +65,13 @@ class Session:
 - Keyword names are short and intuitive (`body=`, `timeout=`)
 - Pylint suppression is scoped to specific methods, not global
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **All positional**: Rejected. Error-prone for methods with many optional params.
 2. **Config object**: Rejected. Over-engineering for 4-5 parameters.
 3. **Builder pattern**: Rejected. Adds complexity without proportional benefit.
 
-### References
+## References
 
 - PEP 3102: Keyword-Only Arguments
 - Python requests library API design

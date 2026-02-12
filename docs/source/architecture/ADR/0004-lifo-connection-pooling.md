@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Connection pooling es crítico para performance. Dos estrategias principales:
 
@@ -16,7 +16,7 @@ Connection pooling es crítico para performance. Dos estrategias principales:
 - Conexiones más recientes tienen más probabilidad de estar activas
 - Cache locality: conexiones recientes están más "calientes"
 
-### Decision
+## Decision
 
 **Usar LIFO (Last In, First Out) para connection pooling**.
 
@@ -43,7 +43,7 @@ class ConnectionPool:
 - Dead connection detection antes de reutilizar
 - Thread-safe con `threading.Lock`
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -64,7 +64,7 @@ class ConnectionPool:
 - **Max idle time**: (futuro) Descartar conexiones muy antiguas
 - **Pool limits**: Evitar crecimiento infinito
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **FIFO**: Rejected. Más conexiones muertas, peor performance.
 2. **Round-robin**: Rejected. Más complejo, no mejora performance.
@@ -74,7 +74,7 @@ class ConnectionPool:
 
 (Pendiente: benchmarks comparando LIFO vs FIFO)
 
-### References
+## References
 
 - [urllib3 connection pooling](https://urllib3.readthedocs.io/en/stable/advanced-usage.html#connection-pooling)
 - httpcore pool implementation

@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Public API is the contract with users. Two approaches:
 
@@ -16,7 +16,7 @@ Public API is the contract with users. Two approaches:
    - Pros: Freedom to change internals
    - Cons: May limit advanced use cases
 
-### Decision
+## Decision
 
 **Export only essential API in `reqivo.__init__.py`**.
 
@@ -79,7 +79,7 @@ from reqivo.http.http11 import HttpParser  # Not guaranteed
 from reqivo.transport.connection import Connection  # May change
 ```
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -111,13 +111,13 @@ With limited API, versioning is clear:
 
 Internal changes DO NOT require major version bump.
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Everything public**: Rejected. Makes evolution difficult.
 2. **Nothing public (only Session)**: Rejected. Too limiting.
 3. **Underscore convention**: Rejected. Not enforced by imports.
 
-### References
+## References
 
 - [Semantic Versioning](https://semver.org/)
 - PEP 8: Public and Internal Interfaces

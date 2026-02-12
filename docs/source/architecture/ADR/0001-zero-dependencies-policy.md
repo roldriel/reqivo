@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Existing HTTP clients in Python (`requests`, `httpx`, `aiohttp`) depend on multiple external libraries:
 - `requests`: urllib3, certifi, chardet, idna
@@ -17,7 +17,7 @@ This creates problems in:
 - **Cloud-native containers**: Minimize footprint
 - **Auditing**: More code to review
 
-### Decision
+## Decision
 
 **Reqivo will NOT have external runtime dependencies**. It will only use the Python 3.9+ standard library.
 
@@ -33,7 +33,7 @@ This means:
 - `pytest`, `coverage`, `mypy`, `black`, `isort`, `pylint`, `bandit` (dev/CI only)
 - `sphinx`, `myst-parser` (docs only)
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -59,13 +59,13 @@ This means:
 - **Conservative roadmap**: Prioritize robustness over features
 - **Documentation of limitations**: Be transparent about trade-offs
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Allow optional dependencies**: Rejected. Complicates installation.
 2. **Only pure Python dependencies**: Rejected. Still adds extra complexity.
 3. **Use urllib3 like httpx/requests**: Rejected. Loses differentiating value.
 
-### References
+## References
 
 - Original issue: (pending)
 - Discussion: (pending)

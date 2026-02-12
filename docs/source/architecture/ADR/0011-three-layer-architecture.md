@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Arquitectura de cliente HTTP puede organizarse de varias formas:
 
@@ -13,7 +13,7 @@ Arquitectura de cliente HTTP puede organizarse de varias formas:
 3. **Three-layer**: Client + Protocol + Transport
 4. **Multi-layer**: Muchas capas de abstracción
 
-### Decision
+## Decision
 
 **Arquitectura de 3 capas claramente separadas**:
 
@@ -62,7 +62,7 @@ src/reqivo/
     └── validators.py
 ```
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -104,13 +104,13 @@ src/reqivo/
 - Timeout enforcement
 - Conexión física a servidor
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Monolithic**: Rejected. Difícil mantener y testear.
 2. **Two-layer**: Rejected. Protocol y transport muy acoplados.
 3. **Four+ layers**: Rejected. Over-engineering innecesario.
 
-### References
+## References
 
 - Clean Architecture (Robert C. Martin)
 - Layered Architecture Pattern

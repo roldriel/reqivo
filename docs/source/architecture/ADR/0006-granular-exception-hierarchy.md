@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Error handling can be:
 
@@ -18,7 +18,7 @@ Benefits of granularity:
 - Easier debugging
 - Clearer documentation
 
-### Decision
+## Decision
 
 **Implement granular exception hierarchy** with 3 levels:
 
@@ -63,7 +63,7 @@ except ReqivoError:
 - Descriptive names (`ConnectTimeout` vs `Timeout`)
 - Optional context info without sensitive data
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -85,13 +85,13 @@ except ReqivoError:
 - **Complete documentation**: Each exception with docstring
 - **Semantic versioning**: Breaking changes only in major versions
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Only ReqivoError**: Rejected. Makes recovery difficult.
 2. **String error codes**: Rejected. Not type-safe.
 3. **Stdlib exceptions**: Rejected. Not specific to HTTP.
 
-### References
+## References
 
 - PEP 3151: Reworking the OS and IO exception hierarchy
 - requests.exceptions

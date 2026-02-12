@@ -14,6 +14,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
     "myst_parser",
 ]
 
@@ -25,15 +26,22 @@ myst_heading_anchors = 3
 myst_all_links_external = False
 myst_enable_extensions = ["colon_fence"]
 
+# Intersphinx mapping for external references
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+}
+
 # Suppress warnings (cosmetic issues that don't affect documentation)
 suppress_warnings = [
     "myst.xref_missing",  # External file links Sphinx can't resolve
     "ref.python",  # Duplicate cross-reference warnings from re-exports
+    "autodoc.import_object",  # Duplicate object descriptions from re-imports
 ]
 
 # Autodoc configuration
 autodoc_default_options = {
     "imported-members": False,
+    "show-inheritance": True,
 }
 autodoc_class_content = "init"
 autodoc_member_order = "bysource"

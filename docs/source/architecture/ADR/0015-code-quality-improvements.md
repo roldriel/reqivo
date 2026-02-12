@@ -5,7 +5,7 @@
 **Deciders**: Rodrigo Roldán
 **Related**: ADR-007, ADR-009
 
-### Context
+## Context
 
 After analyzing best practices from mature Python libraries, we identified several improvements applicable to Reqivo to enhance code quality, maintainability, and performance while maintaining our zero-dependency philosophy.
 
@@ -21,7 +21,7 @@ Reqivo already implemented some of these practices (e.g., `__slots__` in Respons
 - `__slots__` in more classes
 - Organized examples directory
 
-### Decision
+## Decision
 
 **We adopted three key improvements from industry best practices**:
 
@@ -99,7 +99,7 @@ examples/
 - Performance tips
 - Sync and async examples
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -151,7 +151,7 @@ examples/
 2. **`__slots__`**: Only in stable and frequently instantiated classes
 3. **Examples**: Validate examples in CI, cross-reference with real code
 
-### Alternatives Considered
+## Alternatives Considered
 
 #### 1. Don't adopt file headers
 
@@ -213,7 +213,7 @@ sys.getsizeof(session)  # ~312 bytes
 - 6 new files (examples/)
 - 1 new ADR (this document)
 
-### References
+## References
 
 - [ADR-007: Memory Optimization with __slots__](0007-memory-optimization-with-slots.md)
 - [ADR-009: 97% Test Coverage Minimum](0009-97-percent-test-coverage-minimum.md)

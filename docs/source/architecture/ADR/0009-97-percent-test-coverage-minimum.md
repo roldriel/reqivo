@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Test coverage measures what % of code is executed by tests. Common levels:
 - 80%: Good for legacy projects
@@ -23,7 +23,7 @@ Reqivo is zero dependencies, critical code (HTTP, TLS, sockets). Bugs can cause:
 3. **Per file**: Individual coverage of each module
 4. **Project total**: Aggregated coverage of all modules
 
-### Decision
+## Decision
 
 **Minimum 97% test coverage of total project, with branch coverage enabled**.
 
@@ -100,7 +100,7 @@ except UnicodeDecodeError:  # pragma: no cover
 - **What matters**: High global coverage guarantees project robustness
 - Allows flexibility in complex modules without compromising total quality
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -150,13 +150,13 @@ coverage report --fail-under=97
 open htmlcov/index.html
 ```
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **95% threshold**: Rejected. Allows too many exceptions.
 2. **100% threshold**: Rejected. Very difficult to maintain.
 3. **No threshold**: Rejected. Coverage decays over time.
 
-### References
+## References
 
 - pytest-cov documentation
 - coverage.py documentation

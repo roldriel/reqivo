@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Python objects use `__dict__` for attributes, which consumes memory:
 - `__dict__` is dynamic, allows adding attributes at runtime
@@ -17,7 +17,7 @@ Python objects use `__dict__` for attributes, which consumes memory:
 - Attribute access is faster
 - Trade-off: cannot add dynamic attributes
 
-### Decision
+## Decision
 
 **Use `__slots__` in frequently instantiated classes**:
 
@@ -52,7 +52,7 @@ class Response:
         # ...
 ```
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -92,13 +92,13 @@ With __slots__:    ~1.7 MB
 Savings:           ~1.1 MB (39%)
 ```
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Don't use __slots__**: Rejected. Wastes memory unnecessarily.
 2. **Use __slots__ everywhere**: Rejected. Makes extensibility difficult.
 3. **Use frozen dataclasses**: Considered. Less control than __slots__.
 
-### References
+## References
 
 - [Python __slots__ documentation](https://docs.python.org/3/reference/datamodel.html#slots)
 - [Memory savings with __slots__](https://wiki.python.org/moin/UsingSlots)

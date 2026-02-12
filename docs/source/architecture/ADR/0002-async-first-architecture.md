@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Python is evolving toward async/await as the dominant pattern for I/O:
 - FastAPI, Starlette, Quart are async-first
@@ -16,7 +16,7 @@ Design options:
 2. **Async-only** (like `aiohttp`): Only async, no sync
 3. **Async-first**: Async primary, sync as wrapper
 
-### Decision
+## Decision
 
 **Reqivo will be async-first**: The primary API will be async, with synchronous wrappers.
 
@@ -42,7 +42,7 @@ WebSocket     → uses AsyncWebSocket with asyncio.run()
 - Protocol layer is stateless and reusable
 - Only the I/O layer changes (socket vs asyncio)
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -65,13 +65,13 @@ WebSocket     → uses AsyncWebSocket with asyncio.run()
 - **Sensible defaults**: Simple and straightforward sync API
 - **Dual testing**: Tests for both sync and async paths
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Sync-only**: Rejected. Doesn't leverage modern concurrency.
 2. **Async-only**: Rejected. Excludes sync users.
 3. **Sync-first**: Rejected. Async wrapper over sync is inefficient.
 
-### References
+## References
 
 - PEP 492: Coroutines with async/await
 - asyncio documentation

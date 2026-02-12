@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Para parsear HTTP responses, opciones:
 
@@ -17,7 +17,7 @@ Consideraciones:
 - stdlib `http.client` es sync-only y algo limitado
 - Manual parsing da control total
 
-### Decision
+## Decision
 
 **Implementar parser HTTP/1.1 manual en `reqivo.http.http11`**.
 
@@ -54,7 +54,7 @@ class HttpParser:
 - ❌ NO multiline headers (obs-fold obsoleto)
 - ❌ NO auto-decompression (gzip, br) en v0.1.x
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -123,13 +123,13 @@ class HttpParser:
         self.max_body_size = max_body_size
 ```
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **http.client**: Rejected. Sync-only, menos control.
 2. **h11**: Rejected. External dependency.
 3. **Regex-based**: Rejected. Más lento, más complejo.
 
-### References
+## References
 
 - RFC 7230: HTTP/1.1 Message Syntax
 - RFC 7231: HTTP/1.1 Semantics

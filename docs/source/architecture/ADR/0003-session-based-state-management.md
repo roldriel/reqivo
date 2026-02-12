@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Two common patterns in HTTP clients:
 
@@ -22,7 +22,7 @@ Two common patterns in HTTP clients:
 
 We need to decide whether Reqivo supports persistent state between requests.
 
-### Decision
+## Decision
 
 **Implement Session-based architecture** following the `requests` pattern:
 
@@ -61,7 +61,7 @@ response = Request.send("GET", url)  # No state, no pool
 - ❌ Does NOT maintain state
 - ❌ Does NOT have its own connection pool
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -83,13 +83,13 @@ response = Request.send("GET", url)  # No state, no pool
 - **Context managers**: Guarantee cleanup
 - **Stateless API available**: For simple cases
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Stateless only**: Rejected. Inefficient for multiple requests.
 2. **Stateful only**: Rejected. Too much overhead for simple cases.
 3. **Global state**: Rejected. Anti-pattern, makes testing difficult.
 
-### References
+## References
 
 - requests.Session documentation
 - HTTP State Management (RFC 6265)

@@ -4,7 +4,7 @@
 **Date**: 2026-01-29
 **Deciders**: Rodrigo Roldán
 
-### Context
+## Context
 
 Python versions and support:
 
@@ -34,7 +34,7 @@ Features per version relevant for Reqivo:
 - Exception groups
 - Performance (10-60% faster)
 
-### Decision
+## Decision
 
 **Python 3.9+ is the minimum supported version**.
 
@@ -58,7 +58,7 @@ strategy:
 - Async improvements
 - Balance between modernity and compatibility
 
-### Consequences
+## Consequences
 
 #### Positive ✅
 
@@ -114,13 +114,13 @@ If in the future we need 3.10+ features:
 - Document in CHANGELOG.md
 - Migration guide for users
 
-### Alternatives Considered
+## Alternatives Considered
 
 1. **Python 3.8+**: Rejected. 3.8 EOL in 2024-10.
 2. **Python 3.10+**: Rejected. Excludes too many users.
 3. **Python 3.11+**: Rejected. Too recent.
 
-### References
+## References
 
 - [Python Release Schedule](https://devguide.python.org/versions/)
 - PEP 596: Python 3.9 Release Schedule
