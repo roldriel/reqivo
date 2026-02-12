@@ -45,7 +45,7 @@ html_baseurl = "https://roldriel.github.io/reqivo/"
 
 html_theme_options = {
     "source_repository": "https://github.com/roldriel/reqivo",
-    "source_branch": "main",
+    "source_branch": "master",
     "source_directory": "docs/source/",
     "light_css_variables": {
         "color-brand-primary": "#2962FF",

@@ -41,11 +41,11 @@ jobs:
 
       - name: Validate project structure
         run: |
-          echo "✅ Validating project structure..."
-          test -f pyproject.toml || (echo "❌ pyproject.toml not found" && exit 1)
-          test -d src/reqivo || (echo "❌ src/reqivo directory not found" && exit 1)
-          test -d tests || (echo "❌ tests directory not found" && exit 1)
-          echo "✅ Project structure is valid"
+          echo "Validating project structure..."
+          test -f pyproject.toml || (echo "pyproject.toml not found" && exit 1)
+          test -d src/reqivo || (echo "src/reqivo directory not found" && exit 1)
+          test -d tests || (echo "tests directory not found" && exit 1)
+          echo "Project structure is valid"
 
   # Tests en múltiples versiones de Python
   test:
@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
       - uses: actions/checkout@v4
@@ -76,11 +76,11 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          echo "🧪 Running tests for Python ${{ matrix.python-version }}..."
+          echo "Running tests for Python ${{ matrix.python-version }}..."
           tox -e py
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -89,7 +89,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage reports
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.python-version }}
@@ -97,3 +97,61 @@ jobs:
             htmlcov/
             coverage.xml
           retention-days: 30
+
+  # Lint y formato de código
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-22.04
+    permissions: {}
+    needs: validate
+    if: needs.validate.outputs.should-run-tests == 'true'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.12'
+          cache-key-suffix: lint
+          install-tox: true
+
+      - name: Run lint checks
+        run: tox -e lint
+
+  # Type checking
+  typing:
+    name: Type Checking
+    runs-on: ubuntu-22.04
+    permissions: {}
+    needs: validate
+    if: needs.validate.outputs.should-run-tests == 'true'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.12'
+          cache-key-suffix: typing
+          install-tox: true
+
+      - name: Run type checks
+        run: tox -e typing
+
+  # Security scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    permissions: {}
+    needs: validate
+    if: needs.validate.outputs.should-run-tests == 'true'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run security scan
+        uses: ./.github/actions/security-scan
+        with:
+          python-version: '3.12'
+          source-path: 'src/'
+          fail-on-error: 'true'
+          upload-results: 'true'

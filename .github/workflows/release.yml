@@ -24,57 +24,88 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Update system packages
-        run: |
-          sudo apt-get update || true
-          sudo apt-get install -y software-properties-common || true
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.12'
+          cache-key-suffix: validate-release
 
       - name: Validate tag format
         id: tag
         run: |
           TAG_NAME="${{ github.ref_name }}"
-          echo "🏷️ Validating tag: $TAG_NAME"
-          
+          echo "Validating tag: $TAG_NAME"
+
           if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "❌ Error: Tag format must be v*.*.* (e.g., v1.0.0)"
+            echo "Error: Tag format must be v*.*.* (e.g., v1.0.0)"
             exit 1
           fi
-          
+
           VERSION=${TAG_NAME#v}
-          echo "✅ Tag format is valid: $TAG_NAME (version: $VERSION)"
+          echo "Tag format is valid: $TAG_NAME (version: $VERSION)"
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists in git history
         run: |
           if ! git tag --list | grep -q "^${{ steps.tag.outputs.tag }}$"; then
-            echo "❌ Tag ${{ steps.tag.outputs.tag }} not found in git history"
+            echo "Tag ${{ steps.tag.outputs.tag }} not found in git history"
             exit 1
           fi
-          echo "✅ Tag exists in git history"
+          echo "Tag exists in git history"
 
       - name: Verify version in source
         run: |
-          # Extract version directly from the single source of truth
-          SRC_VERSION=$(python3 -c "import sys; sys.path.append('src'); import reqivo; print(reqivo.__version__)")
-          echo "📝 Version in src/reqivo/__init__.py: $SRC_VERSION"
-          
+          SRC_VERSION=$(python -c "import sys; sys.path.append('src'); from reqivo.version import __version__; print(__version__)")
+          echo "Version in src/reqivo/version.py: $SRC_VERSION"
+
           if [[ "$SRC_VERSION" != "${{ steps.tag.outputs.version }}" ]]; then
-            echo "❌ Version mismatch: tag=${{ steps.tag.outputs.version }}, src=$SRC_VERSION"
+            echo "Version mismatch: tag=${{ steps.tag.outputs.version }}, src=$SRC_VERSION"
             exit 1
           fi
-          echo "✅ Version matches in source: $SRC_VERSION"
+          echo "Version matches in source: $SRC_VERSION"
+
+  # Quality checks antes del release
+  pre-release-quality:
+    name: Pre-Release Quality
+    runs-on: ubuntu-22.04
+    permissions: {}
+    needs: validate-release
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python Environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.12'
+          cache-key-suffix: release-quality
+          install-tox: true
+
+      - name: Run lint checks
+        run: tox -e lint
+
+      - name: Run type checks
+        run: tox -e typing
+
+      - name: Run security scan
+        uses: ./.github/actions/security-scan
+        with:
+          python-version: '3.12'
+          source-path: 'src/'
+          fail-on-error: 'true'
+          upload-results: 'false'
 
   # Tests finales antes del release
   pre-release-tests:
-    name: Pre-Release Tests
+    name: Pre-Release Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-22.04
     permissions: {}
     needs: validate-release
     timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
       - uses: actions/checkout@v4
@@ -93,23 +124,18 @@ jobs:
 
       - name: Run comprehensive tests
         run: |
-          echo "🧪 Running comprehensive tests for release..."
-          python -m tox -e py
+          echo "Running comprehensive tests for release..."
+          tox -e py
 
   # Build package
   build-package:
     name: Build Package
     runs-on: ubuntu-22.04
     permissions: {}
-    needs: [validate-release, pre-release-tests]
+    needs: [validate-release, pre-release-quality, pre-release-tests]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
-      - name: Update system packages
-        run: |
-          sudo apt-get update || true
-          sudo apt-get install -y software-properties-common || true
 
       - name: Setup Python Environment
         uses: ./.github/actions/setup-python
@@ -124,7 +150,7 @@ jobs:
 
       - name: Build package
         run: |
-          echo "📦 Building package..."
+          echo "Building package..."
           python -m build
           ls -lh dist/
 
@@ -155,5 +181,3 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
