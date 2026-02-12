@@ -47,15 +47,10 @@ jobs:
         with:
           python-version: '3.12'
           cache-key-suffix: docs-build
-
-      - name: Install documentation dependencies
-        run: |
-          pip install -e .[docs]
+          install-tox: true
 
       - name: Build Sphinx documentation
-        run: |
-          echo "Building documentation..."
-          tox -e docs
+        run: tox -e docs
 
       - name: Upload documentation artifact
         uses: actions/upload-pages-artifact@v3
