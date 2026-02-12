@@ -16,6 +16,7 @@ Testing Strategy:
     - Validate proper cleanup on errors
 """
 
+from http.cookies import CookieError
 from typing import Dict
 from unittest import mock
 
@@ -23,6 +24,7 @@ import pytest
 
 from reqivo.client.response import Response
 from reqivo.client.session import AsyncSession, Session
+from reqivo.http.headers import Headers
 
 # ============================================================================
 # FIXTURES
@@ -45,7 +47,7 @@ def async_session() -> AsyncSession:
 def mock_response() -> mock.Mock:
     """Create a mock Response."""
     resp = mock.Mock(spec=Response)
-    resp.headers = {}
+    resp.headers = Headers()
     resp.status_code = 200
     return resp
 
@@ -120,7 +122,7 @@ class TestSessionCookies:
         self, session: Session, mock_response: mock.Mock
     ) -> None:
         """Test parsing Set-Cookie header from response."""
-        mock_response.headers = {"Set-Cookie": "session_id=xyz789; Path=/"}
+        mock_response.headers = Headers({"Set-Cookie": "session_id=xyz789; Path=/"})
         session._update_cookies_from_response(mock_response)
         assert "session_id" in session.cookies
         assert session.cookies["session_id"] == "xyz789"
@@ -129,7 +131,7 @@ class TestSessionCookies:
         self, session: Session, mock_response: mock.Mock
     ) -> None:
         """Test that no cookies are added when Set-Cookie is absent."""
-        mock_response.headers = {}
+        mock_response.headers = Headers()
         session._update_cookies_from_response(mock_response)
         assert session.cookies == {}
 
@@ -277,7 +279,7 @@ class TestSessionRequests:
         with pytest.raises(Exception):
             session.get("https://example.com/test")
 
-        mock_conn.close.assert_called_once()
+        mock_pool.discard_connection.assert_called_once_with(mock_conn)
 
     @mock.patch("reqivo.client.session.Request")
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
@@ -356,18 +358,18 @@ class TestAsyncSession:
     ) -> None:
         """Test that async cookie parsing handles exceptions gracefully."""
         # Malformed Set-Cookie that would raise exception
-        mock_response.headers = {"Set-Cookie": "malformed cookie data"}
+        mock_response.headers = Headers({"Set-Cookie": "malformed cookie data"})
 
         # Should not raise, but gracefully skip
         async_session._update_cookies_from_response(mock_response)
 
     @pytest.mark.asyncio
-    @mock.patch("reqivo.client.session.AsyncRequest")
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
     async def test_async_get(
         self,
         mock_urlparse: mock.Mock,
-        MockAsyncRequest: mock.Mock,
+        mock_send: mock.AsyncMock,
         async_session: AsyncSession,
         mock_response: mock.Mock,
     ) -> None:
@@ -383,8 +385,8 @@ class TestAsyncSession:
         mock_pool.get_connection.return_value = mock_conn
         async_session.pool = mock_pool
 
-        MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
-        MockAsyncRequest.set_session_instance = mock.Mock()
+        mock_send.return_value = mock_response
+        # MockAsyncRequest.set_session_instance = mock.Mock() # Removed as we patch send directly
 
         result = await async_session.get("https://example.com/test")
 
@@ -401,12 +403,12 @@ class TestAsyncSession:
         mock_pool.close_all.assert_awaited_once()
 
     @pytest.mark.asyncio
-    @mock.patch("reqivo.client.session.AsyncRequest")
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
     async def test_async_post(
         self,
         mock_urlparse: mock.Mock,
-        MockAsyncRequest: mock.Mock,
+        mock_send: mock.AsyncMock,
         async_session: AsyncSession,
     ) -> None:
         """Test async POST request."""
@@ -422,23 +424,22 @@ class TestAsyncSession:
         mock_pool.get_connection.return_value = mock_conn
         async_session.pool = mock_pool
 
-        MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
-        MockAsyncRequest.set_session_instance = mock.Mock()
+        mock_send.return_value = mock_response
 
         result = await async_session.post("https://example.com/test", body="test_data")
 
         assert result == mock_response
         # Verify body was passed to send
-        call_kwargs = MockAsyncRequest.send.call_args[1]
+        call_kwargs = mock_send.call_args[1]
         assert call_kwargs["body"] == "test_data"
 
     @pytest.mark.asyncio
-    @mock.patch("reqivo.client.session.AsyncRequest")
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
     async def test_async_request_with_basic_auth(
         self,
         mock_urlparse: mock.Mock,
-        MockAsyncRequest: mock.Mock,
+        mock_send: mock.AsyncMock,
         async_session: AsyncSession,
     ) -> None:
         """Test async request with basic authentication."""
@@ -456,23 +457,22 @@ class TestAsyncSession:
         mock_pool.get_connection.return_value = mock_conn
         async_session.pool = mock_pool
 
-        MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
-        MockAsyncRequest.set_session_instance = mock.Mock()
+        mock_send.return_value = mock_response
 
         await async_session.get("https://example.com/test")
 
         # Verify Authorization header was added
-        call_kwargs = MockAsyncRequest.send.call_args[1]
+        call_kwargs = mock_send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"].startswith("Basic ")
 
     @pytest.mark.asyncio
-    @mock.patch("reqivo.client.session.AsyncRequest")
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
     async def test_async_request_with_bearer_token(
         self,
         mock_urlparse: mock.Mock,
-        MockAsyncRequest: mock.Mock,
+        mock_send: mock.AsyncMock,
         async_session: AsyncSession,
     ) -> None:
         """Test async request with bearer token."""
@@ -490,23 +490,22 @@ class TestAsyncSession:
         mock_pool.get_connection.return_value = mock_conn
         async_session.pool = mock_pool
 
-        MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
-        MockAsyncRequest.set_session_instance = mock.Mock()
+        mock_send.return_value = mock_response
 
         await async_session.get("https://example.com/test")
 
         # Verify Bearer token was added
-        call_kwargs = MockAsyncRequest.send.call_args[1]
+        call_kwargs = mock_send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"] == "Bearer my_token_123"
 
     @pytest.mark.asyncio
-    @mock.patch("reqivo.client.session.AsyncRequest")
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
     async def test_async_request_with_cookies(
         self,
         mock_urlparse: mock.Mock,
-        MockAsyncRequest: mock.Mock,
+        mock_send: mock.AsyncMock,
         async_session: AsyncSession,
     ) -> None:
         """Test async request includes cookies."""
@@ -524,13 +523,12 @@ class TestAsyncSession:
         mock_pool.get_connection.return_value = mock_conn
         async_session.pool = mock_pool
 
-        MockAsyncRequest.send = mock.AsyncMock(return_value=mock_response)
-        MockAsyncRequest.set_session_instance = mock.Mock()
+        mock_send.return_value = mock_response
 
         await async_session.get("https://example.com/test")
 
         # Verify Cookie header was added
-        call_kwargs = MockAsyncRequest.send.call_args[1]
+        call_kwargs = mock_send.call_args[1]
         assert "Cookie" in call_kwargs["headers"]
         # Cookie can be in any order
         cookie_header = call_kwargs["headers"]["Cookie"]
@@ -574,7 +572,7 @@ class TestAsyncSession:
             await async_session.get("https://example.com/test")
 
         # Verify connection was closed on exception
-        mock_conn.close.assert_awaited_once()
+        mock_pool.discard_connection.assert_awaited_once_with(mock_conn)
 
 
 class TestSessionExceptionHandling:
@@ -600,7 +598,7 @@ class TestSessionExceptionHandling:
                 session.get("http://example.com/test")
 
             # Verify connection was closed on exception
-            mock_conn.close.assert_called_once()
+            mock_pool.discard_connection.assert_called_once_with(mock_conn)
         finally:
             # Restore original method
             Request.send = original_send
@@ -611,7 +609,9 @@ class TestSessionExceptionHandling:
 
         # Create a mock response with malformed Set-Cookie header
         mock_response = mock.Mock()
-        mock_response.headers = {"Set-Cookie": "malformed cookie data \x00 invalid"}
+        mock_response.headers = Headers(
+            {"Set-Cookie": "malformed cookie data \x00 invalid"}
+        )
 
         # Should not raise exception
         session._update_cookies_from_response(mock_response)
@@ -638,7 +638,7 @@ class TestSessionExceptionHandling:
 
         mock_conn = mock.Mock()
         mock_response = mock.Mock(spec=Response)
-        mock_response.headers = {}
+        mock_response.headers = Headers()
 
         mock_pool = mock.Mock()
         mock_pool.get_connection.return_value = mock_conn
@@ -673,7 +673,7 @@ class TestSessionExceptionHandling:
 
         mock_conn = mock.Mock()
         mock_response = mock.Mock(spec=Response)
-        mock_response.headers = {}
+        mock_response.headers = Headers()
 
         mock_pool = mock.Mock()
         mock_pool.get_connection.return_value = mock_conn
@@ -708,7 +708,7 @@ class TestSessionExceptionHandling:
 
         mock_conn = mock.Mock()
         mock_response = mock.Mock(spec=Response)
-        mock_response.headers = {}
+        mock_response.headers = Headers()
 
         mock_pool = mock.Mock()
         mock_pool.get_connection.return_value = mock_conn
@@ -743,7 +743,7 @@ class TestSessionExceptionHandling:
 
         mock_conn = mock.Mock()
         mock_response = mock.Mock(spec=Response)
-        mock_response.headers = {}
+        mock_response.headers = Headers()
 
         mock_pool = mock.Mock()
         mock_pool.get_connection.return_value = mock_conn
@@ -801,7 +801,7 @@ class TestSessionExceptionHandling:
             session.post("https://example.com/api", body="test")
 
         # Verify connection was closed on exception
-        mock_conn.close.assert_called_once()
+        mock_pool.discard_connection.assert_called_once_with(mock_conn)
 
     def test_async_update_cookies_exception_path(self) -> None:
         """Test AsyncSession cookie parsing exception path is covered."""
@@ -810,15 +810,58 @@ class TestSessionExceptionHandling:
         # Create a mock response with a Set-Cookie header
         mock_response = mock.Mock()
         # Set a truthy value so we enter the try block
-        mock_response.headers = {"Set-Cookie": "some_cookie_string"}
+        mock_response.headers = Headers({"Set-Cookie": "some_cookie_string"})
 
         # Patch SimpleCookie.load in the reqivo.client.session module to raise exception
         with mock.patch(
             "reqivo.client.session.SimpleCookie.load",
-            side_effect=ValueError("Malformed cookie"),
+            side_effect=CookieError("Malformed cookie"),
         ):
             # Should not raise - exception should be caught (lines 254-257)
             async_session._update_cookies_from_response(mock_response)
 
         # Verify cookies remain empty after exception
         assert async_session.cookies == {}
+
+    @mock.patch("reqivo.client.session.Request")
+    @mock.patch("reqivo.client.session.ConnectionPool")
+    def test_session_persists_limits(
+        self, MockPool: mock.MagicMock, MockRequest: mock.MagicMock
+    ) -> None:
+        """Test that Session stores and passes limits."""
+        limits = {"max_header_size": 1000}
+        session = Session(limits=limits)
+        assert session.limits == limits
+
+        resp = mock.Mock(spec=Response)
+        resp.headers = Headers()
+        MockRequest.get.return_value = resp
+        MockRequest.set_session_instance = mock.Mock()
+
+        session.get("http://example.com")
+
+        args, kwargs = MockRequest.get.call_args
+        assert kwargs["limits"] == limits
+
+    @pytest.mark.asyncio
+    @mock.patch("reqivo.client.session.AsyncRequest.send", new_callable=mock.AsyncMock)
+    @mock.patch("reqivo.client.session.AsyncConnectionPool")
+    async def test_async_session_persists_limits(
+        self, MockPool: mock.MagicMock, MockAsyncSend: mock.AsyncMock
+    ) -> None:
+        """Test that AsyncSession stores and passes limits."""
+        limits = {"max_field_count": 50}
+        async_session = AsyncSession(limits=limits)
+        assert async_session.limits == limits
+
+        resp = mock.Mock(spec=Response)
+        resp.headers = Headers()
+        MockAsyncSend.return_value = resp
+
+        mock_pool = mock.AsyncMock()
+        async_session.pool = mock_pool
+
+        await async_session.get("http://example.com")
+
+        args, kwargs = MockAsyncSend.call_args
+        assert kwargs["limits"] == limits

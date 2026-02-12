@@ -114,7 +114,7 @@ class TestParseResponseSuccess:
         status_code, status_line, headers, body = parser.parse_response(data)
 
         assert status_code == 200
-        assert headers == {"Content-Type": "text/html"}
+        assert headers == {"Content-Type": ["text/html"]}
         assert body == b""
 
     def test_parse_response_with_multiple_headers(self, parser: HttpParser) -> None:
@@ -130,9 +130,9 @@ class TestParseResponseSuccess:
         status_code, status_line, headers, body = parser.parse_response(data)
 
         assert status_code == 200
-        assert headers["Content-Type"] == "application/json"
-        assert headers["Content-Length"] == "42"
-        assert headers["Server"] == "reqivo-test"
+        assert headers["Content-Type"] == ["application/json"]
+        assert headers["Content-Length"] == ["42"]
+        assert headers["Server"] == ["reqivo-test"]
 
     def test_parse_response_with_body(self, parser: HttpParser) -> None:
         """Test parsing response with body data."""
@@ -141,7 +141,7 @@ class TestParseResponseSuccess:
         status_code, status_line, headers, body = parser.parse_response(data)
 
         assert status_code == 200
-        assert headers["Content-Length"] == "13"
+        assert headers["Content-Length"] == ["13"]
         assert body == b"Hello, World!"
 
     def test_parse_response_with_binary_body(self, parser: HttpParser) -> None:
@@ -207,7 +207,7 @@ class TestParseResponseEdgeCases:
 
         _, _, headers, body = parser.parse_response(data)
 
-        assert headers["Server"] == "test"
+        assert headers["Server"] == ["test"]
         assert body == b""
 
     def test_parse_response_empty_body_with_content_length(
@@ -218,7 +218,7 @@ class TestParseResponseEdgeCases:
 
         _, _, headers, body = parser.parse_response(data)
 
-        assert headers["Content-Length"] == "0"
+        assert headers["Content-Length"] == ["0"]
         assert body == b""
 
     def test_parse_response_body_with_crlf(self, parser: HttpParser) -> None:
@@ -316,42 +316,6 @@ class TestParseResponseErrors:
         # Empty status line triggers "Invalid status line" error
         assert "Invalid status line" in str(exc_info.value)
 
-    def test_parse_response_raises_on_empty_header_section(
-        self, parser: HttpParser
-    ) -> None:
-        """Test that InvalidResponseError is raised when header section is empty.
-
-        This tests the edge case where split returns empty string before delimiter.
-        """
-        # This creates a case where header_bytes would be empty
-        # but we need lines to be empty after split
-        # Actually, b"\r\n\r\n" already tests this path
-        # Let's try another edge case: only delimiter present
-        pytest.skip("Empty header section covered by empty response test")
-
-    def test_parse_response_raises_on_invalid_header_encoding(
-        self, parser: HttpParser
-    ) -> None:
-        """Test that ProtocolError is raised when headers contain invalid encoding.
-
-        NOTE: This line (87 in http11.py) is UNTESTABLE in practice because:
-        1. iso-8859-1 decoder handles all byte values 0-255 without errors
-        2. bytes.decode() is a method of an immutable builtin type and cannot be mocked
-        3. Creating a custom broken codec is overly complex for this edge case
-
-        The error handling code is correct and defensive programming,
-        but achieving 97% coverage on this module would require unreasonable effort.
-
-        Current coverage: 96% (46 statements, 2 uncovered)
-        Uncovered: line 67 (edge case) and line 87 (this UnicodeDecodeError handler)
-
-        This is acceptable given the security-critical nature of the code is fully tested.
-        """
-        pytest.skip(
-            "iso-8859-1 decoder handles all byte values; "
-            "UnicodeDecodeError path is defensive but untestable"
-        )
-
 
 # ============================================================================
 # TEST CLASS: _parse_headers() - Internal Method
@@ -367,7 +331,7 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        assert headers == {"Content-Type": "text/html"}
+        assert headers == {"Content-Type": ["text/html"]}
 
     def test_parse_headers_multiple_headers(self, parser: HttpParser) -> None:
         """Test parsing multiple header lines."""
@@ -380,9 +344,9 @@ class TestParseHeaders:
         headers = parser._parse_headers(lines)
 
         assert len(headers) == 3
-        assert headers["Content-Type"] == "application/json"
-        assert headers["Content-Length"] == "123"
-        assert headers["Server"] == "reqivo/0.1.0"
+        assert headers["Content-Type"] == ["application/json"]
+        assert headers["Content-Length"] == ["123"]
+        assert headers["Server"] == ["reqivo/0.1.0"]
 
     def test_parse_headers_normalizes_to_title_case(self, parser: HttpParser) -> None:
         """Test that header keys are normalized to Title-Case."""
@@ -424,7 +388,8 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        assert headers["Accept"] == "application/json, text/html, application/xml"
+        # Parser now returns list of values
+        assert headers["Accept"] == ["application/json", "text/html", "application/xml"]
 
     def test_parse_headers_handles_set_cookie_duplicates(
         self, parser: HttpParser
@@ -441,8 +406,8 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        # Current implementation keeps only last Set-Cookie
-        assert headers["Set-Cookie"] == "theme=dark"
+        # Parser now returns all values for duplicates
+        assert headers["Set-Cookie"] == ["session=abc123", "user=john", "theme=dark"]
 
     def test_parse_headers_strips_whitespace(self, parser: HttpParser) -> None:
         """Test that whitespace around keys and values is stripped."""
@@ -454,10 +419,10 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        assert headers["Content-Type"] == "text/plain"
-        assert headers["Server"] == "reqivo"
+        assert headers["Content-Type"] == ["text/plain"]
+        assert headers["Server"] == ["reqivo"]
         # X-Custom parses correctly (": " found, extra space stripped from value)
-        assert headers["X-Custom"] == "value with spaces"
+        assert headers["X-Custom"] == ["value with spaces"]
 
     def test_parse_headers_requires_colon_space_separator(
         self, parser: HttpParser
@@ -520,8 +485,8 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        assert headers["X-Custom-Header"] == "value:with:colons"
-        assert headers["X-Url"] == "http://example.com:8080/path"
+        assert headers["X-Custom-Header"] == ["value:with:colons"]
+        assert headers["X-Url"] == ["http://example.com:8080/path"]
 
     def test_parse_headers_empty_list(self, parser: HttpParser) -> None:
         """Test parsing empty header list returns empty dict."""
@@ -537,8 +502,8 @@ class TestParseHeaders:
 
         headers = parser._parse_headers(lines)
 
-        assert headers["X-Empty-Header"] == ""
-        assert headers["X-Normal"] == "value"
+        assert headers["X-Empty-Header"] == [""]
+        assert headers["X-Normal"] == ["value"]
 
 
 # ============================================================================
@@ -566,9 +531,9 @@ class TestParseResponseIntegration:
 
         assert status_code == 200
         assert status_line == "HTTP/1.1 200 OK"
-        assert headers["Content-Type"] == "application/json; charset=utf-8"
-        assert headers["Content-Length"] == "27"
-        assert headers["Connection"] == "keep-alive"
+        assert headers["Content-Type"] == ["application/json; charset=utf-8"]
+        assert headers["Content-Length"] == ["27"]
+        assert headers["Connection"] == ["keep-alive"]
         assert body == b'{"status": "ok", "code": 0}'
 
     def test_parse_chunked_response_headers(self, parser: HttpParser) -> None:
@@ -589,7 +554,7 @@ class TestParseResponseIntegration:
         status_code, _, headers, body = parser.parse_response(data)
 
         assert status_code == 200
-        assert headers["Transfer-Encoding"] == "chunked"
+        assert headers["Transfer-Encoding"] == ["chunked"]
         # Body parsing is handled elsewhere (http/body.py)
         assert len(body) > 0
 
@@ -606,7 +571,7 @@ class TestParseResponseIntegration:
 
         assert status_code == 301
         assert "Moved Permanently" in status_line
-        assert headers["Location"] == "https://example.com/new-location"
+        assert headers["Location"] == ["https://example.com/new-location"]
         assert body == b""
 
     def test_parse_error_response_with_html_body(self, parser: HttpParser) -> None:
@@ -622,5 +587,5 @@ class TestParseResponseIntegration:
         status_code, _, headers, body = parser.parse_response(data)
 
         assert status_code == 404
-        assert headers["Content-Type"] == "text/html"
+        assert headers["Content-Type"] == ["text/html"]
         assert body == html_body

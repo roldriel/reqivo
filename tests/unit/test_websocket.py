@@ -733,6 +733,7 @@ class TestAsyncWebSocketConnect:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
         mock_conn_cls.return_value = mock_conn
@@ -787,6 +788,7 @@ class TestAsyncWebSocketConnect:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
         mock_conn_cls.return_value = mock_conn
@@ -810,6 +812,7 @@ class TestAsyncWebSocketConnect:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
         mock_conn_cls.return_value = mock_conn
@@ -850,6 +853,7 @@ class TestAsyncWebSocketSend:
         """Test async send with text data."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
         ws.connected = True
 
@@ -866,6 +870,7 @@ class TestAsyncWebSocketSend:
         """Test async send with binary data."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
         ws.connected = True
 
@@ -952,6 +957,7 @@ class TestAsyncWebSocketRecv:
         ws = AsyncWebSocket("ws://example.com/")
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.reader = mock_reader
         ws.writer = mock_writer
         ws.connected = True
@@ -1128,6 +1134,7 @@ class TestAsyncWebSocketControlFrames:
         """Test async ping."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
 
         await ws.ping(b"ping_data")
@@ -1142,6 +1149,7 @@ class TestAsyncWebSocketControlFrames:
         """Test async pong."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
 
         await ws.pong(b"pong_data")
@@ -1160,6 +1168,7 @@ class TestAsyncWebSocketClose:
         """Test async close."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
         ws.connected = True
         ws.connection = mock.Mock(spec=AsyncConnection)
@@ -1183,6 +1192,7 @@ class TestAsyncWebSocketClose:
         ws = AsyncWebSocket("ws://example.com/")
         ws.connected = False
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
 
         await ws.close()
@@ -1195,6 +1205,7 @@ class TestAsyncWebSocketClose:
         """Test async close gracefully handles exceptions."""
         ws = AsyncWebSocket("ws://example.com/")
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         ws.writer = mock_writer
         ws.connected = True
         ws.connection = mock.Mock(spec=AsyncConnection)
@@ -1227,6 +1238,7 @@ class TestAsyncWebSocketEdgeCases:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
 
@@ -1269,6 +1281,7 @@ class TestAsyncWebSocketEdgeCases:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
 
@@ -1308,6 +1321,7 @@ class TestAsyncWebSocketEdgeCases:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
 
@@ -1354,6 +1368,7 @@ class TestAsyncWebSocketEdgeCases:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
 
@@ -1383,6 +1398,7 @@ class TestAsyncWebSocketEdgeCases:
         mock_conn.open = mock.AsyncMock()
         mock_reader = mock.AsyncMock()
         mock_writer = mock.AsyncMock()
+        mock_writer.write = mock.Mock()  # Synchronous write
         mock_conn.reader = mock_reader
         mock_conn.writer = mock_writer
 
@@ -1497,6 +1513,7 @@ class TestAsyncWebSocketEdgeCases:
         """Test async close when connection is None (branch 517->520)."""
         ws = AsyncWebSocket("ws://example.com/")
         ws.writer = mock.AsyncMock()
+        ws.writer.write = mock.Mock()  # Synchronous write
         ws.connected = True
         ws.connection = None  # No connection
 

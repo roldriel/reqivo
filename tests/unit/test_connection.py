@@ -585,9 +585,12 @@ class TestAsyncConnectionOpen:
         mock_reader = mock.Mock()
         mock_writer = mock.Mock()
 
-        with mock.patch("asyncio.open_connection") as mock_open:
-            with mock.patch("asyncio.wait_for") as mock_wait:
-                mock_wait.return_value = (mock_reader, mock_writer)
+        with mock.patch("asyncio.open_connection", new_callable=mock.Mock) as mock_open:
+            with mock.patch("asyncio.wait_for", new_callable=mock.Mock) as mock_wait:
+                # Return a coroutine that resolves to the tuple
+                mock_wait.return_value = mock.AsyncMock(
+                    return_value=(mock_reader, mock_writer)
+                )()
 
                 await conn.open()
 
@@ -696,12 +699,15 @@ class TestAsyncConnectionClose:
 
         assert conn.is_usable() is False
 
-    def test_async_is_usable_returns_true_when_writer_open(self) -> None:
-        """Test that is_usable returns True when writer is open."""
+    def test_async_is_usable_returns_true_when_writer_and_reader_open(self) -> None:
+        """Test that is_usable returns True when writer and reader are open."""
         conn = AsyncConnection("example.com", 80)
+        mock_reader = mock.Mock(spec=asyncio.StreamReader)
+        mock_reader.at_eof.return_value = False
         mock_writer = mock.Mock(spec=asyncio.StreamWriter)
         mock_writer.is_closing.return_value = False
 
+        conn.reader = mock_reader
         conn.writer = mock_writer
 
         assert conn.is_usable() is True
@@ -709,9 +715,25 @@ class TestAsyncConnectionClose:
     def test_async_is_usable_returns_false_when_writer_closing(self) -> None:
         """Test that is_usable returns False when writer is closing."""
         conn = AsyncConnection("example.com", 80)
+        mock_reader = mock.Mock(spec=asyncio.StreamReader)
+        mock_reader.at_eof.return_value = False
         mock_writer = mock.Mock(spec=asyncio.StreamWriter)
         mock_writer.is_closing.return_value = True
 
+        conn.reader = mock_reader
+        conn.writer = mock_writer
+
+        assert conn.is_usable() is False
+
+    def test_async_is_usable_returns_false_when_reader_at_eof(self) -> None:
+        """Test that is_usable returns False when reader is at EOF."""
+        conn = AsyncConnection("example.com", 80)
+        mock_reader = mock.Mock(spec=asyncio.StreamReader)
+        mock_reader.at_eof.return_value = True
+        mock_writer = mock.Mock(spec=asyncio.StreamWriter)
+        mock_writer.is_closing.return_value = False
+
+        conn.reader = mock_reader
         conn.writer = mock_writer
 
         assert conn.is_usable() is False
