@@ -63,7 +63,7 @@ def send_request(url: Any, headers: Any = None) -> Any:  # Any abused
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Bug prevention**: Catch errors in development, not at runtime
 2. **IDE support**: Autocomplete, go-to-definition, refactoring
@@ -72,14 +72,14 @@ def send_request(url: Any, headers: Any = None) -> Any:  # Any abused
 5. **Onboarding**: New devs understand API faster
 6. **PEP 561 compliance**: Distribution of type stubs
 
-#### Negative ❌
+### Negative ❌
 
 1. **Verbosity**: Longer code
 2. **Learning curve**: Advanced type hints are complex
 3. **Maintenance**: Types must be updated with code
 4. **CI time**: mypy adds time to pipeline
 
-#### Mitigations
+### Mitigations
 
 - **Generics**: Use `TypeVar` for flexibility
 - **Protocols**: For type-safe duck typing

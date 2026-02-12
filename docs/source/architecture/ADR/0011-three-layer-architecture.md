@@ -64,7 +64,7 @@ src/reqivo/
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Clear separation**: Cada capa tiene propósito definido
 2. **Testability**: Mockear capas inferiores fácilmente
@@ -72,13 +72,13 @@ src/reqivo/
 4. **Maintainability**: Cambios localizados en capa correcta
 5. **Understandability**: Estructura clara para nuevos devs
 
-#### Negative ❌
+### Negative ❌
 
 1. **Indirection**: Más archivos, más imports
 2. **Over-engineering**: Puede ser excesivo para proyecto pequeño
 3. **Coupling**: Capas deben coordinarse cuidadosamente
 
-#### Mitigations
+### Mitigations
 
 - **Clear interfaces**: Cada capa con API bien definida
 - **Documentation**: Arquitectura documentada en ADR (este doc)

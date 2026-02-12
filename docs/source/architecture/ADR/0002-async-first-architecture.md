@@ -44,7 +44,7 @@ WebSocket     → uses AsyncWebSocket with asyncio.run()
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Performance**: Async allows better concurrency
 2. **Modern**: Follows Python ecosystem trend
@@ -52,14 +52,14 @@ WebSocket     → uses AsyncWebSocket with asyncio.run()
 4. **Compatibility**: Sync API available for legacy code
 5. **Single implementation**: Shared protocol code
 
-#### Negative ❌
+### Negative ❌
 
 1. **Complexity**: Maintaining two APIs (sync and async)
 2. **Learning curve**: Async is harder for beginners
 3. **Debugging**: Async debugging is more complex
 4. **Overhead**: Sync wrapper has `asyncio.run()` overhead
 
-#### Mitigations
+### Mitigations
 
 - **Clear documentation**: Examples of both usages
 - **Sensible defaults**: Simple and straightforward sync API

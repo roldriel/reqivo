@@ -46,19 +46,19 @@ Key questions:
 
 ## Consequences
 
-#### Positive
+### Positive
 
 1. **Ergonomic**: Users get final responses without manual redirect handling
 2. **Safe**: Method conversion prevents unintended POST replays
 3. **Secure**: Auth header stripping prevents credential leakage to third parties
 4. **Predictable**: Cycle detection provides fast failure on redirect loops
 
-#### Negative
+### Negative
 
 1. **Implicit behavior**: Redirects happen silently, may surprise users
 2. **Performance**: Each redirect adds a round-trip
 
-#### Mitigations
+### Mitigations
 
 - `allow_redirects=False` for users who want manual control
 - Response history accessible for debugging redirect chains

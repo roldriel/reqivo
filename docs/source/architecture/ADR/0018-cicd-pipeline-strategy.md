@@ -51,7 +51,7 @@ All jobs (except validate) are conditional on source code changes via path filte
 
 ## Consequences
 
-#### Positive
+### Positive
 
 1. **Fast feedback**: lint/typing/security run in parallel with tests
 2. **No regressions**: Every PR must pass all quality gates
@@ -59,13 +59,13 @@ All jobs (except validate) are conditional on source code changes via path filte
 4. **Secure releases**: Quality gate + trusted publishing (no stored secrets)
 5. **Cost-effective**: Path filtering skips unnecessary runs
 
-#### Negative
+### Negative
 
 1. **Complexity**: Three workflows + two composite actions to maintain
 2. **GitHub dependency**: Tied to GitHub Actions ecosystem
 3. **Execution time**: Full matrix (6 Python versions) takes ~15 minutes
 
-#### Mitigations
+### Mitigations
 
 - Path filtering reduces unnecessary CI runs
 - Jobs run in parallel where possible

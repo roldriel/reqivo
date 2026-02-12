@@ -54,7 +54,7 @@ class Response:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Memory**: ~40% less memory per instance
 2. **Performance**: Faster attribute access
@@ -62,14 +62,14 @@ class Response:
 4. **Type hints**: Attributes declared explicitly
 5. **Bugs prevention**: Cannot add typos as attributes
 
-#### Negative ❌
+### Negative ❌
 
 1. **Rigidity**: Cannot add dynamic attributes
 2. **Debugging**: Some debuggers assume `__dict__`
 3. **Monkey patching**: Not possible (feature, not bug)
 4. **Inheritance**: Subclasses must declare their own `__slots__`
 
-#### Mitigations
+### Mitigations
 
 - **Only in stable classes**: Don't use in experimental classes
 - **Document**: Indicate that class uses `__slots__`

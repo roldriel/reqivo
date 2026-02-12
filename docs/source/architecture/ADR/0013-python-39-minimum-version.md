@@ -60,20 +60,20 @@ strategy:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Modern features**: Dict merge, better type hints
 2. **Long support**: 3.9 EOL in 2025-10
 3. **Performance**: 3.9+ is faster than 3.7/3.8
 4. **Security**: Old versions without security patches
 
-#### Negative ❌
+### Negative ❌
 
 1. **Excludes 3.8**: Some users still on 3.8
 2. **Legacy systems**: Old systems may not have 3.9+
 3. **Corporate environments**: Companies slow to update
 
-#### Mitigations
+### Mitigations
 
 - **Clear documentation**: Indicate 3.9+ requirement
 - **Error message**: Setup.py fails with clear message if <3.9

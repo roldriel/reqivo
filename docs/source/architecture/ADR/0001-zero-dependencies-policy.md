@@ -35,7 +35,7 @@ This means:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Maximum portability**: Works wherever Python works
 2. **Security**: Smaller attack surface
@@ -44,7 +44,7 @@ This means:
 5. **Auditable**: All code is visible and controllable
 6. **Instant installation**: `pip install reqivo` without extra downloads
 
-#### Negative ❌
+### Negative ❌
 
 1. **More code to maintain**: Manual HTTP parsing
 2. **Re-inventing the wheel**: Functionality already exists in libraries
@@ -52,7 +52,7 @@ This means:
 4. **Fewer advanced features**: Some optimizations require C extensions
 5. **Slower development**: Without leveraging existing code
 
-#### Mitigations
+### Mitigations
 
 - **Test coverage ≥97%**: To detect bugs in custom code
 - **Strict type hints**: To prevent errors

@@ -48,19 +48,19 @@ class Session:
 
 ## Consequences
 
-#### Positive
+### Positive
 
 1. **Clear intent**: `session.post(url, body="data")` is unambiguous
 2. **Error prevention**: Cannot accidentally swap `headers` and `body`
 3. **Extensible**: New parameters can be added without breaking existing calls
 4. **Readable**: Call sites are self-documenting
 
-#### Negative
+### Negative
 
 1. **Verbosity**: Requires explicit keyword names at call sites
 2. **Pylint suppression**: `too-many-arguments` needs inline disable
 
-#### Mitigations
+### Mitigations
 
 - Keyword names are short and intuitive (`body=`, `timeout=`)
 - Pylint suppression is scoped to specific methods, not global

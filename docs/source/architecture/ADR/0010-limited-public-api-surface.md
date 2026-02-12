@@ -81,7 +81,7 @@ from reqivo.transport.connection import Connection  # May change
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Backward compatibility**: Only public API is stable
 2. **Refactoring freedom**: Internals can change without breaking
@@ -89,13 +89,13 @@ from reqivo.transport.connection import Connection  # May change
 4. **Smaller docs**: Only document public API
 5. **Semantic versioning**: Clear breaking changes
 
-#### Negative ❌
+### Negative ❌
 
 1. **Less flexibility**: Users cannot access internals
 2. **Feature requests**: Advanced cases may not be possible
 3. **Frustration**: "Why can't I import X?"
 
-#### Mitigations
+### Mitigations
 
 - **Extensible API**: Allow customization via hooks
 - **Feature requests**: Evaluate promoting internals to public

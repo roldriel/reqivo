@@ -28,14 +28,15 @@ myst_enable_extensions = ["colon_fence"]
 
 # Intersphinx mapping for external references
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
+    "python": ("https://docs.python.org/3", None),
 }
 
 # Suppress warnings (cosmetic issues that don't affect documentation)
 suppress_warnings = [
     "myst.xref_missing",  # External file links Sphinx can't resolve
     "ref.python",  # Duplicate cross-reference warnings from re-exports
-    "autodoc.import_object",  # Duplicate object descriptions from re-imports
+    "ref.class",  # External class references (asyncio, socket, etc.)
+    "autodoc",  # All autodoc warnings including duplicates
 ]
 
 # Autodoc configuration

@@ -65,7 +65,7 @@ except ReqivoError:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Recovery strategies**: Code can react specifically
 2. **Debugging**: Clearer stack traces
@@ -73,13 +73,13 @@ except ReqivoError:
 4. **Type safety**: mypy can verify exception handling
 5. **Testable**: Easy to test each error path
 
-#### Negative ❌
+### Negative ❌
 
 1. **More code**: More classes to maintain
 2. **Documentation**: Each exception must be documented
 3. **Breaking changes**: Adding exceptions can break existing code
 
-#### Mitigations
+### Mitigations
 
 - **Stable hierarchy**: Don't change inheritance after v1.0
 - **Complete documentation**: Each exception with docstring

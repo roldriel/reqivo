@@ -102,7 +102,7 @@ except UnicodeDecodeError:  # pragma: no cover
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Confidence**: Safe refactorings
 2. **Bug prevention**: Tests detect regressions
@@ -110,14 +110,14 @@ except UnicodeDecodeError:  # pragma: no cover
 4. **API design**: Testing enforces good API
 5. **Debugging**: Bugs are replicated in tests
 
-#### Negative ❌
+### Negative ❌
 
 1. **Slower development**: Writing tests takes time
 2. **Maintenance**: Tests also need maintenance
 3. **False confidence**: 97% doesn't guarantee bug absence
 4. **Overhead**: Complex tests can be fragile
 
-#### Mitigations
+### Mitigations
 
 - **TDD**: Tests first reduces rework
 - **Fast tests**: Optimize suite for speed

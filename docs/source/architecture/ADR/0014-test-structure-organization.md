@@ -90,7 +90,7 @@ tests/
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Findability**: Fácil encontrar tests para un módulo
 2. **Completeness**: Detectar módulos sin tests
@@ -98,13 +98,13 @@ tests/
 4. **Scalability**: Estructura crece con proyecto
 5. **Clear mapping**: 1:1 entre source y test files
 
-#### Negative ❌
+### Negative ❌
 
 1. **Duplicate structure**: Dos árboles de directorios (src + tests)
 2. **Renaming overhead**: Renombrar módulo requiere renombrar test
 3. **Large test files**: Módulos grandes → test files grandes
 
-#### Mitigations
+### Mitigations
 
 - **Split large tests**: Dividir por funcionalidad si es muy grande
 - **Shared utilities**: Reutilizar fixtures y helpers

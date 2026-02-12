@@ -63,7 +63,7 @@ response = Request.send("GET", url)  # No state, no pool
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Familiar**: Known pattern from `requests`
 2. **Efficient**: Connection reuse via pool
@@ -71,13 +71,13 @@ response = Request.send("GET", url)  # No state, no pool
 4. **Flexible**: Supports both patterns (stateful/stateless)
 5. **Clean separation**: Session = state, Request = builder
 
-#### Negative ❌
+### Negative ❌
 
 1. **Complexity**: More code than stateless only
 2. **Mutable state**: Sessions can have side effects
 3. **Thread safety**: Sessions are not thread-safe by design
 
-#### Mitigations
+### Mitigations
 
 - **Document thread safety**: One Session per thread
 - **Context managers**: Guarantee cleanup

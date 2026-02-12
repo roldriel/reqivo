@@ -47,7 +47,7 @@ v2.0.0+:         HTTP/3 (maybe)
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Mejor foundation**: HTTP/1.1 robusto antes de complejidad
 2. **Usable hoy**: HTTP/1.1 cubre 99% de casos
@@ -55,13 +55,13 @@ v2.0.0+:         HTTP/3 (maybe)
 4. **Debugging simple**: HTTP/1.1 es texto legible
 5. **Zero dependencies**: HTTP/2 sin h2 lib es posible pero complejo
 
-#### Negative ❌
+### Negative ❌
 
 1. **Sin HTTP/2 features**: No multiplexing, no server push (por ahora)
 2. **Performance limitado**: HTTP/1.1 tiene head-of-line blocking
 3. **Competencia**: httpx ya tiene HTTP/2
 
-#### Mitigations
+### Mitigations
 
 - **Roadmap claro**: HTTP/2 en v1.0.0 está comprometido
 - **Documentar limitación**: Ser transparente sobre HTTP/1.1 only

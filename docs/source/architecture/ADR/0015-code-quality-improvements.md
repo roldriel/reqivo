@@ -101,7 +101,7 @@ examples/
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **File Headers**:
    - Better navigation in large codebase
@@ -130,7 +130,7 @@ examples/
    - More professional and documented code
    - Clear patterns established
 
-#### Negative ❌
+### Negative ❌
 
 1. **File Headers**:
    - Require updates if files are moved
@@ -145,7 +145,7 @@ examples/
    - Requires continuous maintenance
    - Examples may become outdated
 
-#### Mitigations
+### Mitigations
 
 1. **File Headers**: Use automated scripts for bulk updates
 2. **`__slots__`**: Only in stable and frequently instantiated classes

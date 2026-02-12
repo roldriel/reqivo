@@ -56,7 +56,7 @@ class HttpParser:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Control total**: Customizar parsing a necesidades
 2. **Zero deps**: Cumple ADR-001
@@ -64,14 +64,14 @@ class HttpParser:
 4. **Optimizable**: Podemos optimizar bottlenecks
 5. **Educational**: Entendemos HTTP en profundidad
 
-#### Negative ❌
+### Negative ❌
 
 1. **Más código**: Parser no trivial (~150 LOC)
 2. **Bugs potenciales**: Implementación nueva tiene riesgo
 3. **Mantenimiento**: Debemos mantener compliance con RFC
 4. **Edge cases**: Servidores raros pueden romper parser
 
-#### Mitigations
+### Mitigations
 
 - **Tests exhaustivos**: 97%+ coverage en parser
 - **RFC compliance tests**: Test against known responses

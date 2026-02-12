@@ -45,20 +45,20 @@ class ConnectionPool:
 
 ## Consequences
 
-#### Positive ✅
+### Positive ✅
 
 1. **Menos conexiones muertas**: Conexiones recientes más probablemente activas
 2. **Cache locality**: Mejores hit rates en CPU cache
 3. **Simple**: Lista como stack es eficiente O(1)
 4. **Predictible**: Comportamiento determinístico
 
-#### Negative ❌
+### Negative ❌
 
 1. **Desbalance**: Algunas conexiones nunca se reutilizan si pool está activo
 2. **Starvation**: Conexiones antiguas pueden quedar idle hasta timeout
 3. **No es round-robin**: No distribuye carga uniformemente
 
-#### Mitigations
+### Mitigations
 
 - **Dead connection detection**: Verificar `is_usable()` antes de reutilizar
 - **Max idle time**: (futuro) Descartar conexiones muy antiguas
