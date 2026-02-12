@@ -54,3 +54,7 @@ class InvalidResponseError(ProtocolError):
 
 class RedirectLoopError(RequestError):
     """Exception for infinite redirect loops."""
+
+
+class TooManyRedirects(RequestError):
+    """Too many redirects occurred."""

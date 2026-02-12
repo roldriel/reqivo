@@ -7,7 +7,7 @@ cookie management, authentication, and request state across multiple HTTP calls.
 """
 
 import urllib.parse
-from http.cookies import SimpleCookie
+from http.cookies import CookieError, SimpleCookie
 from typing import Dict, Optional, Tuple, Union
 
 from reqivo.client.auth import (
@@ -34,9 +34,9 @@ class Session:
         _bearer_token: Bearer token for authentication.
     """
 
-    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token")
+    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token", "limits")
 
-    def __init__(self) -> None:
+    def __init__(self, limits: Optional[Dict[str, int]] = None) -> None:
         """
         Initialize a new HTTP session.
 
@@ -47,6 +47,7 @@ class Session:
         self.pool = ConnectionPool()
         self._basic_auth: Optional[Tuple[str, str]] = None
         self._bearer_token: Optional[str] = None
+        self.limits = limits
 
     def set_basic_auth(self, username: str, password: str) -> None:
         """
@@ -78,12 +79,17 @@ class Session:
         Args:
             response: Response object containing Set-Cookie headers.
         """
-        set_cookie = response.headers.get("Set-Cookie")
-        if set_cookie:
+        # Set-Cookie headers should be handled individually
+        set_cookies = response.headers.get_all("Set-Cookie")
+        if set_cookies:
             cookie = SimpleCookie()
-            cookie.load(set_cookie)
-            for key, morsel in cookie.items():
-                self.cookies[key] = morsel.value
+            for cookie_val in set_cookies:
+                try:
+                    cookie.load(cookie_val)
+                    for key, morsel in cookie.items():
+                        self.cookies[key] = morsel.value
+                except CookieError:
+                    continue
 
     def _build_cookie_header(self) -> str:
         """
@@ -99,6 +105,7 @@ class Session:
         url: str,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 5,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         """Sends a GET request."""
 
@@ -135,6 +142,7 @@ class Session:
                 headers=merged_headers,
                 timeout=timeout,
                 connection=conn,
+                limits=limits or self.limits,
             )
 
             self._update_cookies_from_response(response)
@@ -147,18 +155,20 @@ class Session:
 
         except Exception:
             # If there was an error, ensure the connection is closed
-            conn.close()
+            self.pool.discard_connection(conn)
             raise
 
         finally:
             Request.set_session_instance(None)
 
-    def post(
+    def post(  # pylint: disable=too-many-arguments
         self,
         url: str,
+        *,
         headers: Optional[Dict[str, str]] = None,
         body: Optional[Union[str, bytes]] = None,
         timeout: Optional[float] = 5,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         """Sends a POST request."""
 
@@ -196,6 +206,7 @@ class Session:
                 body=body,
                 timeout=timeout,
                 connection=conn,
+                limits=limits or self.limits,
             )
 
             self._update_cookies_from_response(response)
@@ -205,7 +216,7 @@ class Session:
             return response
 
         except Exception:
-            conn.close()
+            self.pool.discard_connection(conn)
             raise
 
         finally:
@@ -225,14 +236,15 @@ class AsyncSession:
     Asynchronous HTTP session manager.
     """
 
-    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token")
+    __slots__ = ("cookies", "headers", "pool", "_basic_auth", "_bearer_token", "limits")
 
-    def __init__(self) -> None:
+    def __init__(self, limits: Optional[Dict[str, int]] = None) -> None:
         self.cookies: Dict[str, str] = {}
         self.headers: Dict[str, str] = {}
         self.pool = AsyncConnectionPool()
         self._basic_auth: Optional[Tuple[str, str]] = None
         self._bearer_token: Optional[str] = None
+        self.limits = limits
 
     def set_basic_auth(self, username: str, password: str) -> None:
         """Set basic auth."""
@@ -247,18 +259,17 @@ class AsyncSession:
         return "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
 
     def _update_cookies_from_response(self, response: Response) -> None:
-        set_cookie = response.headers.get("Set-Cookie")
-        if set_cookie:
+        set_cookies = response.headers.get_all("Set-Cookie")
+        if set_cookies:
             cookie = SimpleCookie()
-            try:
-                cookie.load(set_cookie)
-                for key, morsel in cookie.items():
-                    self.cookies[key] = morsel.value
+            for cookie_val in set_cookies:
+                try:
+                    cookie.load(cookie_val)
+                    for key, morsel in cookie.items():
+                        self.cookies[key] = morsel.value
 
-            except Exception:  # pylint: disable=broad-exception-caught
-                # Log cookie parsing error but don't fail the request
-                # TODO: Add proper logging when logging module is implemented
-                pass  # nosec
+                except CookieError:
+                    continue
 
     # pylint: disable=missing-function-docstring
     async def get(
@@ -266,6 +277,7 @@ class AsyncSession:
         url: str,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 5,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         """Async GET."""
         return await self._request(
@@ -273,14 +285,17 @@ class AsyncSession:
             url,
             headers=headers,
             timeout=timeout,
+            limits=limits,
         )
 
-    async def post(
+    async def post(  # pylint: disable=too-many-arguments
         self,
         url: str,
+        *,
         headers: Optional[Dict[str, str]] = None,
         body: Optional[Union[str, bytes]] = None,
         timeout: Optional[float] = 5,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         return await self._request(
             "POST",
@@ -288,6 +303,7 @@ class AsyncSession:
             headers=headers,
             body=body,
             timeout=timeout,
+            limits=limits,
         )
 
     # pylint: disable=too-many-arguments
@@ -299,6 +315,7 @@ class AsyncSession:
         headers: Optional[Dict[str, str]] = None,
         body: Optional[Union[str, bytes]] = None,
         timeout: Optional[float] = 5,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         """Sends an async request."""
         merged_headers = {**self.headers, **(headers or {})}
@@ -335,6 +352,7 @@ class AsyncSession:
                 body=body,
                 timeout=timeout,
                 connection=conn,
+                limits=limits or self.limits,
             )
 
             # Put connection back to pool if it's still open
@@ -344,7 +362,7 @@ class AsyncSession:
 
         except Exception:
             # If request failed, connection might be broken
-            await conn.close()
+            await self.pool.discard_connection(conn)
             raise
         finally:
             AsyncRequest.set_session_instance(None)

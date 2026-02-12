@@ -29,6 +29,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
@@ -64,9 +66,13 @@ python_files = "test_*.py"
 markers = [
     "integration: tests de integración que requieren red"
 ]
+filterwarnings = [
+    "error",
+]
 
 [tool.pylint.master]
 ignore = "tests"
+fail-under = 10.0
 
 [tool.pylint."messages control"]
 disable = "R0903,R0801,W0511"
@@ -100,7 +106,7 @@ show_missing = true
 fail_under = 97
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 warn_unused_configs = true

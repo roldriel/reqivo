@@ -9,12 +9,13 @@ including status line, headers, and body parsing.
 # pylint: disable=line-too-long,unused-import,unused-variable
 
 import json as std_json
-from typing import Any, Dict, Generator, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 from reqivo.exceptions import InvalidResponseError, ProtocolError
 
 # pylint: disable=unused-import
 from reqivo.http.body import iter_read_chunked, read_exact
+from reqivo.http.headers import Headers
 from reqivo.http.http11 import HttpParser
 from reqivo.transport.connection import Connection
 
@@ -48,6 +49,8 @@ class Response:
         "_connection",
         "_stream",
         "_consumed",
+        "history",
+        "_limits",
     )
 
     def __init__(
@@ -55,6 +58,7 @@ class Response:
         raw_response: bytes,
         connection: Optional[Connection] = None,
         stream: bool = False,
+        limits: Optional[Dict[str, int]] = None,
     ) -> None:
         """
         Initialize Response by parsing raw HTTP response bytes.
@@ -63,13 +67,16 @@ class Response:
             raw_response: Raw bytes (full response or headers+buffer if streaming).
             connection: Explicit connection object (required for streaming).
             stream: Whether to stream content lazily.
+            limits: Dictionary of limits (max_header_size, max_line_size, max_field_count).
         """
         self.raw: bytes = raw_response
         self.status_line: str = ""
         self.status_code: int = 0
-        self.headers: Dict[str, str] = {}
+        self.headers: Headers = Headers()
         self.body: bytes = b""
         self.url: Optional[str] = None
+        self.history: list["Response"] = []
+        self._limits = limits or {}
 
         self._connection = connection
         self._stream = stream
@@ -92,15 +99,16 @@ class Response:
         Internal method to parse the raw response.
         """
         try:
-            parser = HttpParser()
+            parser = HttpParser(**self._limits)
             # parse_response returns (status_code, status_line, headers, body_buffer)
-            status_code, status_line, headers, body_buffer = parser.parse_response(
+            # headers is Dict[str, List[str]]
+            status_code, status_line, headers_dict, body_buffer = parser.parse_response(
                 self.raw
             )
 
             self.status_code = status_code
             self.status_line = status_line
-            self.headers = headers
+            self.headers = Headers(cast(Dict[str, Union[str, List[str]]], headers_dict))
             self.body = body_buffer
 
         except (ProtocolError, InvalidResponseError) as e:
@@ -136,7 +144,9 @@ class Response:
 
         try:
             # Determine read strategy
-            transfer_encoding = self.headers.get("Transfer-Encoding", "").lower()
+            transfer_encoding = cast(
+                str, self.headers.get("Transfer-Encoding", "")
+            ).lower()
             content_length = self.headers.get("Content-Length")
 
             sock = self._connection.sock
@@ -198,7 +208,7 @@ class Response:
             self._consumed = True
 
         if encoding is None:
-            content_type = self.headers.get("Content-Type", "")
+            content_type = cast(str, self.headers.get("Content-Type", ""))
             if "charset=" in content_type:
                 encoding = content_type.split("charset=")[-1].split(";")[0].strip()
             else:

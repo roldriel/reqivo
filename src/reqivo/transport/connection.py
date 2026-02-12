@@ -245,10 +245,10 @@ class AsyncConnection:
 
     def is_usable(self) -> bool:
         """Check if connection is usable."""
-        if not self.writer:
+        if not self.writer or not self.reader:
             return False
 
-        return not self.writer.is_closing()
+        return not self.writer.is_closing() and not self.reader.at_eof()
 
     async def close(self) -> None:
         """Async close."""

@@ -5,6 +5,8 @@ HTTP request builder and sender.
 
 # pylint: disable=redefined-builtin,protected-access
 
+import asyncio
+import socket
 import urllib.parse
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
@@ -21,10 +23,12 @@ from reqivo.exceptions import (
     InvalidResponseError,
     NetworkError,
     ProtocolError,
+    ReadTimeout,
     RedirectLoopError,
     ReqivoError,
     RequestError,
     TimeoutError,
+    TooManyRedirects,
 )
 
 # pylint: disable=unused-import
@@ -32,7 +36,7 @@ from reqivo.http.http11 import HttpParser
 from reqivo.transport.connection import AsyncConnection, Connection
 from reqivo.utils.timing import Timeout
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from reqivo.client.session import AsyncSession, Session
 
 
@@ -101,16 +105,111 @@ class Request:
         body: Optional[Union[str, bytes]] = None,
         timeout: Union[float, Timeout, None] = 5,
         connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         """
-        Sends an HTTP request.
+        Sends an HTTP request with automatic redirects support.
         """
+        history: list[Response] = []
+        visited_urls = {url}
+        current_url = url
+        current_method = method
+        current_headers = headers or {}
+        current_body = body
+
         # Ensure timeout is a Timeout object
         if isinstance(timeout, Timeout):
             timeout_obj = timeout
         else:
             timeout_obj = Timeout.from_float(timeout)
 
+        for _ in range(max_redirects + 1):
+            response = cls._perform_request(
+                current_method,
+                current_url,
+                current_headers,
+                current_body,
+                timeout_obj,
+                connection,
+                limits=limits,
+            )
+
+            # Check for redirect
+            if (
+                allow_redirects
+                and response.status_code in (301, 302, 303, 307, 308)
+                and "Location" in response.headers
+            ):
+                # Consume response body to free connection
+                response.text()
+
+                response.history = list(history)
+                history.append(response)
+
+                # Prepare for next request
+                redirect_url = response.headers["Location"]
+                # Handle relative URLs
+                parsed_current = urllib.parse.urlparse(current_url)
+                current_url = urllib.parse.urljoin(current_url, redirect_url)
+                if current_url in visited_urls:
+                    raise RedirectLoopError(f"Redirect cycle detected: {current_url}")
+                visited_urls.add(current_url)
+                parsed_new = urllib.parse.urlparse(current_url)
+
+                # Handle method changes
+                status = response.status_code
+                if status == 303:
+                    current_method = "GET"
+                    current_body = None
+                    # Drop Content-* headers
+                    current_headers = {
+                        k: v
+                        for k, v in current_headers.items()
+                        if not k.lower().startswith("content-")
+                    }
+                elif status in (301, 302) and current_method != "HEAD":
+                    current_method = "GET"
+                    current_body = None
+                    current_headers = {
+                        k: v
+                        for k, v in current_headers.items()
+                        if not k.lower().startswith("content-")
+                    }
+
+                # Strip Authorization if host changed
+                if parsed_new.netloc != parsed_current.netloc:
+                    if "Authorization" in current_headers:
+                        del current_headers["Authorization"]
+
+                # If connection was specific, we shouldn't reuse it for redirect
+                # to different host
+                # Logic: if connection provided, use it only if hosts match
+                # (handled in _perform_request)
+                continue
+
+            # Not a redirect or max reached (handled by loop end?)
+            # Actually if max reached, loop ends.
+            response.history = list(history)
+            return response
+
+        raise TooManyRedirects(f"Exceeded {max_redirects} redirects.")
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-locals,too-many-branches
+    def _perform_request(
+        cls,
+        method: str,
+        url: str,
+        headers: Dict[str, str],
+        body: Optional[Union[str, bytes]],
+        timeout: Timeout,
+        connection: Optional[Connection],
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        """Internal method to perform a single HTTP request."""
         parsed = urllib.parse.urlparse(url)
         scheme = parsed.scheme
         host = parsed.hostname
@@ -122,7 +221,7 @@ class Request:
         if not host:
             raise RequestError("Invalid URL: could not determine host")
 
-        headers_dict = headers or {}
+        headers_dict = headers.copy()
         headers_dict.setdefault("Connection", "close")
         request_bytes = cls.build_request(method, path, host, headers_dict, body)
 
@@ -133,7 +232,7 @@ class Request:
                 host,
                 port,
                 use_ssl=(scheme == "https"),
-                timeout=timeout_obj,
+                timeout=timeout,
             )
 
         try:
@@ -146,18 +245,23 @@ class Request:
 
             sock.sendall(request_bytes)
 
-            # Leer todo el contenido hasta cierre de socket
+            # Read response
             response_data = b""
-            while True:
-                chunk = sock.recv(4096)
-                if not chunk:
-                    break
-                response_data += chunk
+            try:
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    response_data += chunk
+            except socket.timeout as exc:
+                raise ReadTimeout(f"Read timed out: {exc}") from exc
+            except socket.error as exc:
+                raise NetworkError(f"Network error during read: {exc}") from exc
 
             if not response_data:
                 raise NetworkError("Server closed connection without response")
 
-            resp_obj = Response(response_data, connection=conn)
+            resp_obj = Response(response_data, connection=conn, limits=limits)
 
             session_instance = getattr(cls, "_session_instance", None)
             if session_instance:
@@ -166,8 +270,10 @@ class Request:
             return resp_obj
 
         finally:
-            # Siempre cerrar en esta versión radical sin pools complejos por ahora
-            conn.close()
+            if conn is not connection:
+                # If we created the connection, close it
+                conn.close()
+            # If explicit connection provided, caller handles closing (usually)
 
     @classmethod
     # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
@@ -177,6 +283,9 @@ class Request:
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 5,
         connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         return cls.send(
             "GET",
@@ -184,6 +293,9 @@ class Request:
             headers=headers,
             timeout=timeout,
             connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
         )
 
     @classmethod
@@ -195,6 +307,9 @@ class Request:
         body: Optional[Union[str, bytes]] = None,
         timeout: Optional[float] = 5,
         connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         return cls.send(
             "POST",
@@ -203,6 +318,9 @@ class Request:
             body=body,
             timeout=timeout,
             connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
         )
 
 
@@ -228,13 +346,99 @@ class AsyncRequest:
         body: Optional[Union[str, bytes]] = None,
         timeout: Union[float, Timeout, None] = 5,
         connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
-        """Sends an async request."""
+        """Sends an async request with automatic redirects support."""
+        history: list[Response] = []
+        visited_urls = {url}
+        current_url = url
+        current_method = method
+        current_headers = headers or {}
+        current_body = body
+
         if isinstance(timeout, Timeout):
             timeout_obj = timeout
         else:
             timeout_obj = Timeout.from_float(timeout)
 
+        for _ in range(max_redirects + 1):
+            response = await cls._perform_request(
+                current_method,
+                current_url,
+                current_headers,
+                current_body,
+                timeout_obj,
+                connection,
+                limits=limits,
+            )
+
+            # Check for redirect
+            if (
+                allow_redirects
+                and response.status_code in (301, 302, 303, 307, 308)
+                and "Location" in response.headers
+            ):
+                # Consume response body to free connection
+                response.text()
+
+                response.history = list(history)
+                history.append(response)
+
+                # Prepare for next request
+                redirect_url = response.headers["Location"]
+                parsed_current = urllib.parse.urlparse(current_url)
+                current_url = urllib.parse.urljoin(current_url, redirect_url)
+                if current_url in visited_urls:
+                    raise RedirectLoopError(f"Redirect cycle detected: {current_url}")
+                visited_urls.add(current_url)
+                parsed_new = urllib.parse.urlparse(current_url)
+
+                status = response.status_code
+                if status == 303:
+                    current_method = "GET"
+                    current_body = None
+                    current_headers = {
+                        k: v
+                        for k, v in current_headers.items()
+                        if not k.lower().startswith("content-")
+                    }
+                elif status in (301, 302) and current_method != "HEAD":
+                    current_method = "GET"
+                    current_body = None
+                    current_headers = {
+                        k: v
+                        for k, v in current_headers.items()
+                        if not k.lower().startswith("content-")
+                    }
+
+                # Strip Authorization if host changed
+                if parsed_new.netloc != parsed_current.netloc:
+                    if "Authorization" in current_headers:
+                        del current_headers["Authorization"]
+
+                continue
+
+            response.history = list(history)
+            return response
+
+        raise TooManyRedirects(f"Exceeded {max_redirects} redirects.")
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-locals,too-many-branches
+    async def _perform_request(
+        cls,
+        method: str,
+        url: str,
+        headers: Dict[str, str],
+        body: Optional[Union[str, bytes]],
+        timeout: Timeout,
+        connection: Optional[AsyncConnection],
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        """Internal method to perform a single async HTTP request."""
         parsed = urllib.parse.urlparse(url)
         scheme = parsed.scheme
         host = parsed.hostname
@@ -246,7 +450,7 @@ class AsyncRequest:
         if not host:
             raise RequestError("Invalid URL: could not determine host")
 
-        headers_dict = headers or {}
+        headers_dict = headers.copy()
         headers_dict.setdefault("Connection", "close")
 
         # Reuse Request.build_request
@@ -259,7 +463,7 @@ class AsyncRequest:
                 host,
                 port,
                 use_ssl=(scheme == "https"),
-                timeout=timeout_obj,
+                timeout=timeout,
             )
 
         try:
@@ -272,18 +476,42 @@ class AsyncRequest:
             conn.writer.write(request_bytes)
             await conn.writer.drain()
 
-            # Leer todo el contenido asíncronamente
+            # Read response
             response_data = b""
-            while True:
-                chunk = await conn.reader.read(4096)
-                if not chunk:
-                    break
-                response_data += chunk
+            try:
+                while True:
+                    if timeout.read is not None:
+                        chunk = await asyncio.wait_for(
+                            conn.reader.read(4096), timeout=timeout.read
+                        )
+                    elif timeout.total is not None:
+                        # Fallback to total if read not specific?
+                        # Usually total is handled by wrapping the whole operation?
+                        # But here we are inside.
+                        # If socket connect consumed total?
+                        # connection.py handles connect timeout.
+                        # Here we handle read.
+                        # Use total as read timeout if read is None?
+                        # consistent with connection.py logic:
+                        # read_to = self.timeout.read if ... else self.timeout.total
+                        chunk = await asyncio.wait_for(
+                            conn.reader.read(4096), timeout=timeout.total
+                        )
+                    else:
+                        chunk = await conn.reader.read(4096)
+
+                    if not chunk:
+                        break
+                    response_data += chunk
+            except asyncio.TimeoutError as exc:
+                raise ReadTimeout(f"Read timed out: {exc}") from exc
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                raise NetworkError(f"Network error during read: {exc}") from exc
 
             if not response_data:
                 raise NetworkError("Server closed connection without response")
 
-            resp_obj = Response(response_data)
+            resp_obj = Response(response_data, limits=limits)
 
             session_instance = getattr(cls, "_session_instance", None)
             if session_instance:
@@ -292,7 +520,8 @@ class AsyncRequest:
             return resp_obj
 
         finally:
-            await conn.close()
+            if conn is not connection:
+                await conn.close()
 
     @classmethod
     # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
@@ -302,6 +531,9 @@ class AsyncRequest:
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 5,
         connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         return await cls.send(
             "GET",
@@ -309,6 +541,9 @@ class AsyncRequest:
             headers=headers,
             timeout=timeout,
             connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
         )
 
     @classmethod
@@ -320,6 +555,9 @@ class AsyncRequest:
         body: Optional[Union[str, bytes]] = None,
         timeout: Optional[float] = 5,
         connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
     ) -> Response:
         return await cls.send(
             "POST",
@@ -328,4 +566,7 @@ class AsyncRequest:
             body=body,
             timeout=timeout,
             connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
         )
