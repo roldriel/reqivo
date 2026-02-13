@@ -39,6 +39,8 @@ from reqivo.utils.timing import Timeout
 if TYPE_CHECKING:  # pragma: no cover
     from reqivo.client.session import AsyncSession, Session
 
+__all__ = ["Request", "AsyncRequest"]
+
 
 class Request:
     """

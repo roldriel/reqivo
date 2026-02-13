@@ -19,6 +19,8 @@ from reqivo.http.headers import Headers
 from reqivo.http.http11 import HttpParser
 from reqivo.transport.connection import Connection
 
+__all__ = ["ResponseParseError", "Response"]
+
 
 class ResponseParseError(Exception):
     """Exception raised when HTTP response parsing fails."""
@@ -34,7 +36,6 @@ class Response:
         status_code: HTTP status code as integer.
         headers: Dictionary of response headers (normalized to Title-Case).
         body: Response body as bytes (full content if stream=False).
-        status: Alias for status_code for compatibility.
         url: URL of the response (if set externally).
     """
 

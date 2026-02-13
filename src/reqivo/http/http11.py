@@ -9,6 +9,8 @@ from typing import Dict, List, Optional, Tuple
 
 from reqivo.exceptions import InvalidResponseError, ProtocolError
 
+__all__ = ["HttpParser"]
+
 
 class HttpParser:
     """

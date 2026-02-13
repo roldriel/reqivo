@@ -1,12 +1,6 @@
 reqivo package
 ===============
 
-.. automodule:: reqivo
-   :members:
-   :exclude-members: Session, AsyncSession, Request, AsyncRequest, Response, WebSocket, AsyncWebSocket, ConnectionPool
-   :show-inheritance:
-   :undoc-members:
-
 Subpackages
 -----------
 
@@ -28,7 +22,6 @@ reqivo.exceptions module
 .. automodule:: reqivo.exceptions
    :members:
    :show-inheritance:
-   :undoc-members:
 
 reqivo.version module
 ---------------------
@@ -36,4 +29,3 @@ reqivo.version module
 .. automodule:: reqivo.version
    :members:
    :show-inheritance:
-   :undoc-members:

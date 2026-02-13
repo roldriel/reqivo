@@ -31,12 +31,15 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
 
-# Suppress warnings (cosmetic issues that don't affect documentation)
+# Suppress warnings (external references Sphinx cannot resolve)
 suppress_warnings = [
     "myst.xref_missing",  # External file links Sphinx can't resolve
-    "ref.python",  # Duplicate cross-reference warnings from re-exports
-    "ref.class",  # External class references (asyncio, socket, etc.)
-    "autodoc",  # All autodoc warnings including duplicates
+]
+
+# Nitpick: ignore internal Python paths that intersphinx cannot resolve
+nitpick_ignore = [
+    ("py:class", "asyncio.streams.StreamReader"),
+    ("py:class", "asyncio.streams.StreamWriter"),
 ]
 
 # Autodoc configuration

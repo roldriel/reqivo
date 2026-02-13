@@ -5,6 +5,8 @@ URL builder and parser for Reqivo.
 
 import urllib.parse
 
+__all__ = ["URL"]
+
 
 class URL:
     """Utility class for URL parsing and information."""

@@ -18,6 +18,8 @@ from reqivo.client.request import AsyncRequest, Request
 from reqivo.client.response import Response
 from reqivo.transport.connection_pool import AsyncConnectionPool, ConnectionPool
 
+__all__ = ["Session", "AsyncSession"]
+
 
 class Session:
     """

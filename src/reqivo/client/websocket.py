@@ -30,6 +30,8 @@ from reqivo.utils.websocket_utils import (
     parse_frame_header,
 )
 
+__all__ = ["MAX_FRAME_SIZE", "WebSocket", "AsyncWebSocket"]
+
 # Maximum frame payload size (10 MB)
 MAX_FRAME_SIZE = 10 * 1024 * 1024
 

@@ -6,6 +6,8 @@ HTTP body management (chunked, fixed-length, streaming) for Reqivo.
 import socket
 from typing import Generator
 
+__all__ = ["read_exact", "iter_read_chunked", "read_chunked"]
+
 
 def read_exact(sock: socket.socket, n: int) -> bytes:
     """Read exactly n bytes from the socket."""

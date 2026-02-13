@@ -1,20 +1,6 @@
 {{ pkgname }} package
 {{ "=" * (pkgname|length + 9) }}
 
-.. automodule:: {{ pkgname }}
-   :members:
-{%- if pkgname == "reqivo" %}
-   :exclude-members: Session, AsyncSession, Request, AsyncRequest, Response, WebSocket, AsyncWebSocket, ConnectionPool
-{%- elif pkgname == "reqivo.client" %}
-   :exclude-members: Session, AsyncSession, Request, AsyncRequest, Response, WebSocket, AsyncWebSocket
-{%- elif pkgname == "reqivo.transport" %}
-   :exclude-members: Connection, AsyncConnection, ConnectionPool, AsyncConnectionPool, Timeout
-{%- elif pkgname == "reqivo.utils" %}
-   :exclude-members: Timeout
-{%- endif %}
-   :show-inheritance:
-   :undoc-members:
-
 {%- if subpackages %}
 
 Subpackages
@@ -37,6 +23,5 @@ Submodules
 .. automodule:: {{ submodule }}
    :members:
    :show-inheritance:
-   :undoc-members:
 {% endfor %}
 {%- endif %}

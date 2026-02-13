@@ -5,6 +5,8 @@ Authentication helpers for Reqivo.
 
 import base64
 
+__all__ = ["build_basic_auth_header", "build_bearer_auth_header"]
+
 
 def build_basic_auth_header(username: str, password: str) -> str:
     """

@@ -15,6 +15,8 @@ from typing import Deque, Dict, List, Tuple, Union
 from reqivo.transport.connection import AsyncConnection, Connection
 from reqivo.utils.timing import Timeout
 
+__all__ = ["ConnectionPool", "AsyncConnectionPool"]
+
 
 class ConnectionPool:
     """

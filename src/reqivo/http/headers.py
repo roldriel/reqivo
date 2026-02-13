@@ -7,6 +7,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, TypeVar, Union,
 
 _T = TypeVar("_T")
 
+__all__ = ["Headers"]
+
 
 class Headers(Mapping[str, str]):
     """

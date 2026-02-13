@@ -25,6 +25,8 @@ from reqivo.exceptions import (
 )
 from reqivo.utils.timing import Timeout
 
+__all__ = ["Connection", "AsyncConnection"]
+
 
 class Connection:
     """

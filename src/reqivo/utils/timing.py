@@ -6,6 +6,8 @@ Timeouts configuration.
 from dataclasses import dataclass
 from typing import Optional
 
+__all__ = ["Timeout"]
+
 
 @dataclass
 class Timeout:
