@@ -38,8 +38,8 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-docs = ["sphinx", "myst-parser", "furo"]
-test = ["pytest", "coverage", "pytest-asyncio"]
+docs = ["sphinx==9.1.0", "myst-parser==5.0.0", "furo==2025.12.19"]
+test = ["pytest>=8.0,<10.0", "coverage>=7.0,<8.0", "pytest-asyncio>=1.0,<2.0"]
 
 [project.urls]
 repository = "https://github.com/roldriel/reqivo"
