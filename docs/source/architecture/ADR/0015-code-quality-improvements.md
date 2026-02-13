@@ -25,7 +25,7 @@ Reqivo already implemented some of these practices (e.g., `__slots__` in Respons
 
 **We adopted three key improvements from industry best practices**:
 
-#### 1. File Header Convention
+### 1. File Header Convention
 
 Every Python file now starts with a docstring containing its exact path:
 
@@ -43,7 +43,7 @@ Additional docstring content...
 - Clear identification in error messages
 - Consistent standard with mature libraries
 
-#### 2. `__slots__` Memory Optimization
+### 2. `__slots__` Memory Optimization
 
 Added `__slots__` to 10 additional classes (Response already had it):
 
@@ -78,7 +78,7 @@ class Session:
 # Savings:            ~208 KB (40%)
 ```
 
-#### 3. Examples Directory
+### 3. Examples Directory
 
 Created `examples/` directory with 5 comprehensive guides:
 
@@ -101,7 +101,7 @@ examples/
 
 ## Consequences
 
-### Positive ✅
+###  Positive ✅
 
 1. **File Headers**:
    - Better navigation in large codebase
@@ -130,7 +130,7 @@ examples/
    - More professional and documented code
    - Clear patterns established
 
-### Negative ❌
+###  Negative ❌
 
 1. **File Headers**:
    - Require updates if files are moved
@@ -145,7 +145,7 @@ examples/
    - Requires continuous maintenance
    - Examples may become outdated
 
-### Mitigations
+###  Mitigations
 
 1. **File Headers**: Use automated scripts for bulk updates
 2. **`__slots__`**: Only in stable and frequently instantiated classes
@@ -153,31 +153,31 @@ examples/
 
 ## Alternatives Considered
 
-#### 1. Don't adopt file headers
+### 1. Don't adopt file headers
 
 **Rejected**: Benefits outweigh minimal maintenance overhead. It's an established practice in mature libraries.
 
-#### 2. Use `@dataclass` instead of `__slots__`
+### 2. Use `@dataclass` instead of `__slots__`
 
 **Rejected**:
 - Not compatible with existing constructors
 - `__slots__` provides more control
 - Better performance than dataclasses
 
-#### 3. Keep examples only in README
+### 3. Keep examples only in README
 
 **Rejected**:
 - README would become too large
 - Hard to find specific examples
 - Poor hierarchical organization
 
-#### 4. Apply `__slots__` to all classes
+### 4. Apply `__slots__` to all classes
 
 **Rejected**:
 - Some classes need flexibility (exceptions, experimental classes)
 - Trade-off not worth it for rarely instantiated classes
 
-### Performance Impact
+###  Performance Impact
 
 **Informal benchmarks** (Python 3.12):
 
@@ -198,7 +198,7 @@ sys.getsizeof(session)  # ~312 bytes
 # Vs. hypothetical without __slots__: ~520 bytes
 ```
 
-### Implementation
+###  Implementation
 
 **Validation**:
 - ✅ All tests pass (98% coverage)
