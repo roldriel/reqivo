@@ -87,6 +87,7 @@ class Connection:
             )
             if self.use_ssl:
                 context = ssl.create_default_context()
+                context.minimum_version = ssl.TLSVersion.TLSv1_2
                 try:
                     self.sock = context.wrap_socket(raw_sock, server_hostname=self.host)
 
@@ -210,7 +211,10 @@ class AsyncConnection:
 
     async def open(self) -> None:
         """Async open."""
-        ssl_context = ssl.create_default_context() if self.use_ssl else None
+        ssl_context = None
+        if self.use_ssl:
+            ssl_context = ssl.create_default_context()
+            ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
 
         if self.timeout:
             connect_to = (
