@@ -13,15 +13,17 @@ from reqivo import Session
 
 session = Session()
 
-# First request opens a new connection
-response1 = session.get("https://httpbin.org/get")
+try:
+    # First request opens a new connection
+    response1 = session.get("https://httpbin.org/get")
 
-# Subsequent requests to the same host reuse the connection
-response2 = session.get("https://httpbin.org/uuid")
-response3 = session.get("https://httpbin.org/headers")
+    # Subsequent requests to the same host reuse the connection
+    response2 = session.get("https://httpbin.org/uuid")
+    response3 = session.get("https://httpbin.org/headers")
 
-# Connection is kept alive and reused (LIFO strategy)
-session.close()
+    # Connection is kept alive and reused (LIFO strategy)
+finally:
+    session.close()
 ```
 
 ### Connection Pool Benefits
@@ -38,17 +40,18 @@ from reqivo import Session
 
 session = Session()
 
-# Connections to different hosts are pooled separately
-response1 = session.get("https://httpbin.org/get")      # Pool 1
-response2 = session.get("https://www.example.com/")     # Pool 2
-response3 = session.get("https://httpbin.org/uuid")     # Reuses Pool 1
-
-session.close()
+try:
+    # Connections to different hosts are pooled separately
+    response1 = session.get("https://httpbin.org/get")      # Pool 1
+    response2 = session.get("https://www.example.com/")     # Pool 2
+    response3 = session.get("https://httpbin.org/uuid")     # Reuses Pool 1
+finally:
+    session.close()
 ```
 
-## Streaming Large Responses
+## Streaming Responses
 
-Handle large responses efficiently without loading everything into memory.
+Handle response bodies in chunks without loading everything into memory at once.
 
 ### Basic Streaming
 
@@ -57,18 +60,14 @@ from reqivo import Session
 
 session = Session()
 
-response = session.get(
-    "https://httpbin.org/stream-bytes/10240",
-    stream=True
-)
+try:
+    response = session.get("https://httpbin.org/stream-bytes/10240")
 
-# Read response in chunks
-chunk_size = 1024
-for chunk in response.iter_content(chunk_size=chunk_size):
-    # Process chunk
-    print(f"Received {len(chunk)} bytes")
-
-session.close()
+    # Read response in chunks
+    for chunk in response.iter_content(chunk_size=1024):
+        print(f"Received {len(chunk)} bytes")
+finally:
+    session.close()
 ```
 
 ### Downloading Files
@@ -77,11 +76,11 @@ session.close()
 from reqivo import Session
 
 def download_file(url: str, output_path: str):
-    """Download a file in chunks"""
+    """Download a file in chunks."""
     session = Session()
 
     try:
-        response = session.get(url, stream=True)
+        response = session.get(url)
 
         with open(output_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
@@ -96,31 +95,8 @@ def download_file(url: str, output_path: str):
 # Usage
 download_file(
     "https://httpbin.org/image/png",
-    "downloaded_image.png"
+    "downloaded_image.png",
 )
-```
-
-### Async Streaming
-
-```python
-import asyncio
-from reqivo import AsyncSession
-
-async def stream_large_file():
-    async with AsyncSession() as session:
-        response = await session.get(
-            "https://httpbin.org/stream-bytes/102400",
-            stream=True
-        )
-
-        total_bytes = 0
-        async for chunk in response.iter_content(chunk_size=8192):
-            total_bytes += len(chunk)
-            print(f"Downloaded {total_bytes} bytes so far...")
-
-        print(f"Total downloaded: {total_bytes} bytes")
-
-asyncio.run(stream_large_file())
 ```
 
 ## Custom Request Building
@@ -134,80 +110,110 @@ from reqivo import Session
 
 session = Session()
 
-headers = {
-    "User-Agent": "MyCustomClient/1.0",
-    "Accept": "application/json",
-    "Accept-Language": "en-US,en;q=0.9",
-    "X-Request-ID": "unique-request-id-12345",
-    "X-API-Version": "v2",
-}
+try:
+    headers = {
+        "User-Agent": "MyCustomClient/1.0",
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "X-Request-ID": "unique-request-id-12345",
+        "X-API-Version": "v2",
+    }
 
-response = session.get(
-    "https://httpbin.org/headers",
-    headers=headers
-)
+    response = session.get(
+        "https://httpbin.org/headers",
+        headers=headers,
+    )
 
-print(response.json())
-session.close()
+    print(response.json())
+finally:
+    session.close()
 ```
 
 ### Query Parameters
 
 ```python
 from reqivo import Session
+from urllib.parse import urlencode
 
 session = Session()
 
-# Method 1: URL with query string
-response1 = session.get("https://httpbin.org/get?foo=bar&baz=qux")
+try:
+    # Method 1: URL with query string
+    response1 = session.get("https://httpbin.org/get?foo=bar&baz=qux")
 
-# Method 2: Build URL with params
-params = {
-    "search": "python",
-    "page": 1,
-    "limit": 20,
-}
-
-# Manually build URL
-from urllib.parse import urlencode
-url = "https://api.example.com/search?" + urlencode(params)
-response2 = session.get(url)
-
-session.close()
+    # Method 2: Build URL with params
+    params = {
+        "search": "python",
+        "page": 1,
+        "limit": 20,
+    }
+    url = "https://api.example.com/search?" + urlencode(params)
+    response2 = session.get(url)
+finally:
+    session.close()
 ```
 
 ### Request Body Formats
 
 ```python
-from reqivo import Session
 import json
+from reqivo import Session
 
 session = Session()
 
-# JSON body
-data = {"name": "Alice", "age": 30}
-response1 = session.post(
-    "https://httpbin.org/post",
-    json=data
-)
+try:
+    # JSON body
+    data = {"name": "Alice", "age": 30}
+    response1 = session.post(
+        "https://httpbin.org/post",
+        body=json.dumps(data),
+        headers={"Content-Type": "application/json"},
+    )
 
-# Form-encoded body
-form_data = "key1=value1&key2=value2"
-response2 = session.post(
-    "https://httpbin.org/post",
-    body=form_data,
-    headers={"Content-Type": "application/x-www-form-urlencoded"}
-)
+    # Form-encoded body
+    form_data = "key1=value1&key2=value2"
+    response2 = session.post(
+        "https://httpbin.org/post",
+        body=form_data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
 
-# Raw bytes body
-raw_data = b"\x00\x01\x02\x03"
-response3 = session.post(
-    "https://httpbin.org/post",
-    body=raw_data,
-    headers={"Content-Type": "application/octet-stream"}
-)
+    # Raw bytes body
+    raw_data = b"\x00\x01\x02\x03"
+    response3 = session.post(
+        "https://httpbin.org/post",
+        body=raw_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+finally:
+    session.close()
+```
 
-session.close()
+### Streaming Uploads (Chunked Transfer Encoding)
+
+```python
+from reqivo import Session
+
+def file_chunks(filepath: str, chunk_size: int = 8192):
+    """Read a file in chunks for streaming upload."""
+    with open(filepath, 'rb') as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+
+session = Session()
+
+try:
+    # Upload a file using chunked transfer encoding
+    response = session.post(
+        "https://upload.example.com/files",
+        body=file_chunks("large_file.bin"),
+    )
+    print(f"Upload status: {response.status_code}")
+finally:
+    session.close()
 ```
 
 ## WebSocket Support
@@ -225,17 +231,17 @@ ws.connect()
 
 try:
     # Send text message
-    ws.send_text("Hello, WebSocket!")
+    ws.send("Hello, WebSocket!")
 
     # Receive message
-    message = ws.receive()
+    message = ws.recv()
     print(f"Received: {message}")
 
     # Send binary message
-    ws.send_binary(b"\x00\x01\x02\x03")
+    ws.send(b"\x00\x01\x02\x03")
 
     # Receive binary
-    binary_msg = ws.receive()
+    binary_msg = ws.recv()
     print(f"Received binary: {binary_msg}")
 
 finally:
@@ -254,10 +260,10 @@ async def websocket_example():
 
     try:
         # Send message
-        await ws.send_text("Hello from async!")
+        await ws.send("Hello from async!")
 
         # Receive message
-        message = await ws.receive()
+        message = await ws.recv()
         print(f"Received: {message}")
 
     finally:
@@ -276,24 +282,114 @@ ws = WebSocket(
     headers={
         "Authorization": "Bearer your-token",
         "X-Client-ID": "client-123",
-    }
+    },
 )
 
 ws.connect()
 
 try:
     # Send authenticated message
-    ws.send_text('{"action": "subscribe", "channel": "updates"}')
+    ws.send('{"action": "subscribe", "channel": "updates"}')
 
     # Receive updates
     while True:
-        message = ws.receive()
-        if message is None:
-            break
+        message = ws.recv()
         print(f"Update: {message}")
 
 finally:
     ws.close()
+```
+
+### WebSocket with Auto-Reconnect
+
+```python
+from reqivo import Reqivo
+
+client = Reqivo()
+
+try:
+    ws = client.websocket(
+        "wss://echo.websocket.org",
+        auto_reconnect=True,
+        max_reconnect_attempts=5,
+        reconnect_delay=1.0,
+    )
+    ws.connect()
+
+    try:
+        ws.send("Hello with auto-reconnect!")
+        message = ws.recv()
+        print(f"Received: {message}")
+    finally:
+        ws.close()
+finally:
+    client.close()
+```
+
+## Hooks (Request/Response Interceptors)
+
+The `Reqivo` facade provides a fluent API for registering hooks:
+
+### Pre-Request Hook
+
+```python
+from reqivo import Reqivo
+
+def log_request(method, url, headers):
+    """Log outgoing requests."""
+    print(f"-> {method} {url}")
+    return method, url, headers
+
+def add_custom_header(method, url, headers):
+    """Add a custom header to every request."""
+    headers["X-Custom-Header"] = "my-value"
+    return method, url, headers
+
+with Reqivo(base_url="https://httpbin.org").on_request(log_request).on_request(add_custom_header) as client:
+    response = client.get("/headers")
+    print(response.json())
+```
+
+### Post-Response Hook
+
+```python
+from reqivo import Reqivo
+
+def log_response(response):
+    """Log incoming responses."""
+    print(f"<- {response.status_code} ({len(response.body)} bytes)")
+    return response
+
+with Reqivo().on_response(log_response) as client:
+    response = client.get("https://httpbin.org/get")
+```
+
+### Hooks with Session
+
+```python
+from reqivo import Session
+
+def add_correlation_id(method, url, headers):
+    """Add correlation ID to all requests."""
+    import uuid
+    headers["X-Correlation-ID"] = str(uuid.uuid4())
+    return method, url, headers
+
+def validate_status(response):
+    """Log warning for non-2xx responses."""
+    if response.status_code >= 400:
+        print(f"WARNING: {response.status_code} for {response.url}")
+    return response
+
+session = Session()
+session.add_pre_request_hook(add_correlation_id)
+session.add_post_response_hook(validate_status)
+
+try:
+    response = session.get("https://httpbin.org/get")
+    print(response.json())
+finally:
+    session.close()
 ```
 
 ## Performance Optimization
@@ -303,14 +399,14 @@ finally:
 ```python
 from reqivo import Session
 
-# ❌ Bad: Creating new session for each request
+# Bad: Creating new session for each request
 def bad_approach():
     for i in range(100):
         session = Session()
         response = session.get("https://httpbin.org/get")
         session.close()
 
-# ✅ Good: Reuse single session
+# Good: Reuse single session
 def good_approach():
     session = Session()
     try:
@@ -327,11 +423,13 @@ import asyncio
 from reqivo import AsyncSession
 
 async def optimized_concurrent_requests():
-    """Efficiently make many concurrent requests"""
+    """Efficiently make many concurrent requests."""
 
     urls = [f"https://httpbin.org/uuid" for _ in range(50)]
 
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         # Create all tasks
         tasks = [session.get(url) for url in urls]
 
@@ -340,26 +438,25 @@ async def optimized_concurrent_requests():
 
         # Process responses
         return [r.json() for r in responses]
+    finally:
+        await session.close()
 
 # Execute
 results = asyncio.run(optimized_concurrent_requests())
 print(f"Completed {len(results)} requests")
 ```
 
-### Memory-Efficient Streaming
+### Memory-Efficient Response Processing
 
 ```python
 from reqivo import Session
 
 def process_large_response():
-    """Process large response without loading into memory"""
+    """Process large response without loading into memory."""
     session = Session()
 
     try:
-        response = session.get(
-            "https://httpbin.org/stream-bytes/1048576",  # 1 MB
-            stream=True
-        )
+        response = session.get("https://httpbin.org/stream-bytes/1048576")  # 1 MB
 
         total_size = 0
         chunk_count = 0
@@ -390,8 +487,8 @@ Reqivo is fully typed with PEP 561 compliance.
 from reqivo import Session, Response
 from typing import Dict, Optional
 
-def fetch_user(user_id: int) -> Optional[Dict[str, any]]:
-    """Fetch user data with type hints"""
+def fetch_user(user_id: int) -> Optional[Dict]:
+    """Fetch user data with type hints."""
     session: Session = Session()
 
     try:
@@ -405,37 +502,9 @@ def fetch_user(user_id: int) -> Optional[Dict[str, any]]:
         session.close()
 
 # Usage with type checking
-user: Optional[Dict[str, any]] = fetch_user(123)
+user: Optional[Dict] = fetch_user(123)
 if user:
     print(user["name"])
-```
-
-### Generic Session Wrapper
-
-```python
-from reqivo import Session, Response
-from typing import TypeVar, Generic, Optional
-
-T = TypeVar('T')
-
-class ApiClient(Generic[T]):
-    """Type-safe API client"""
-
-    def __init__(self, base_url: str):
-        self.base_url = base_url
-        self.session = Session()
-
-    def get(self, endpoint: str) -> Response:
-        url = f"{self.base_url}{endpoint}"
-        return self.session.get(url)
-
-    def close(self) -> None:
-        self.session.close()
-
-# Usage with type checking
-client = ApiClient[dict]("https://api.example.com")
-response = client.get("/users/123")
-client.close()
 ```
 
 ## Custom User Agents
@@ -448,20 +517,21 @@ from reqivo import Session
 session = Session()
 session.headers["User-Agent"] = "MyApp/1.0 (https://example.com)"
 
-response = session.get("https://httpbin.org/user-agent")
-print(response.json())
-
-session.close()
+try:
+    response = session.get("https://httpbin.org/user-agent")
+    print(response.json())
+finally:
+    session.close()
 ```
 
 ### Detailed User Agent
 
 ```python
-from reqivo import Session
 import platform
+from reqivo import Session
 
 def build_user_agent(app_name: str, app_version: str) -> str:
-    """Build detailed user agent string"""
+    """Build detailed user agent string."""
     python_version = platform.python_version()
     system = platform.system()
     system_version = platform.release()
@@ -471,10 +541,11 @@ def build_user_agent(app_name: str, app_version: str) -> str:
 session = Session()
 session.headers["User-Agent"] = build_user_agent("MyApp", "2.0")
 
-response = session.get("https://httpbin.org/user-agent")
-print(response.json())
-
-session.close()
+try:
+    response = session.get("https://httpbin.org/user-agent")
+    print(response.json())
+finally:
+    session.close()
 ```
 
 ## Request Timeouts
@@ -487,35 +558,36 @@ from reqivo.utils.timing import Timeout
 
 session = Session()
 
-# Simple timeout (total time)
-response1 = session.get("https://httpbin.org/delay/2", timeout=5.0)
+try:
+    # Simple timeout (total time)
+    response1 = session.get("https://httpbin.org/delay/2", timeout=5.0)
 
-# Detailed timeout control
-timeout = Timeout(
-    connect=3.0,  # Connection timeout
-    read=10.0,    # Read timeout
-    total=15.0    # Total timeout
-)
+    # Detailed timeout control
+    timeout = Timeout(
+        connect=3.0,  # Connection timeout
+        read=10.0,    # Read timeout
+        total=15.0,   # Total timeout
+    )
 
-response2 = session.get("https://httpbin.org/delay/2", timeout=timeout)
-
-session.close()
+    response2 = session.get("https://httpbin.org/delay/2", timeout=timeout)
+finally:
+    session.close()
 ```
 
 ## Best Practices Summary
 
 1. **Reuse Sessions**: Create one session and reuse it for multiple requests
 2. **Use Async for Concurrency**: Use `AsyncSession` for concurrent requests
-3. **Stream Large Responses**: Don't load large responses entirely into memory
+3. **Stream Large Responses**: Use `iter_content()` for large response bodies
 4. **Set Appropriate Timeouts**: Always set timeouts to prevent hanging
 5. **Handle Errors Gracefully**: Use try-except blocks with specific exceptions
-6. **Close Resources**: Always close sessions, use context managers
+6. **Close Resources**: Always close sessions with `try/finally` or use `Reqivo` with context managers
 7. **Type Annotations**: Use type hints for better code quality
 8. **Connection Pooling**: Let Reqivo manage connections automatically
 
 ## See Also
 
-- [Quick Start Guide](https://github.com/roldriel/reqivo/blob/main/examples/quick_start.md)
-- [Async Patterns](https://github.com/roldriel/reqivo/blob/main/examples/async_patterns.md)
-- [Session Management](https://github.com/roldriel/reqivo/blob/main/examples/session_management.md)
-- [Error Handling](https://github.com/roldriel/reqivo/blob/main/examples/error_handling.md)
+- [Quick Start Guide](quick_start.md)
+- [Async Patterns](async_patterns.md)
+- [Session Management](session_management.md)
+- [Error Handling](error_handling.md)

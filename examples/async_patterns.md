@@ -1,16 +1,16 @@
 # Async Patterns with Reqivo
 
-Reqivo is async-first, providing full support for `asyncio` with `AsyncSession` and `AsyncRequest`.
+Reqivo is async-first, providing full support for `asyncio` with `AsyncReqivo` and `AsyncSession`.
 
 ## Basic Async Request
 
 ```python
 import asyncio
-from reqivo import AsyncSession
+from reqivo import AsyncReqivo
 
 async def fetch_data():
-    async with AsyncSession() as session:
-        response = await session.get("https://httpbin.org/get")
+    async with AsyncReqivo() as client:
+        response = await client.get("https://httpbin.org/get")
         return response.json()
 
 # Run the async function
@@ -33,7 +33,9 @@ async def fetch_multiple():
         "https://httpbin.org/json",
     ]
 
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         # Create tasks for all requests
         tasks = [session.get(url) for url in urls]
 
@@ -45,6 +47,8 @@ async def fetch_multiple():
             print(f"{url}: Status {response.status_code}")
 
         return responses
+    finally:
+        await session.close()
 
 asyncio.run(fetch_multiple())
 ```
@@ -65,7 +69,9 @@ async def fetch_with_error_handling():
         "https://httpbin.org/delay/10",    # May timeout
     ]
 
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         tasks = []
         for url in urls:
             task = session.get(url, timeout=5.0)
@@ -80,6 +86,8 @@ async def fetch_with_error_handling():
                 print(f"{url}: Error - {result}")
             else:
                 print(f"{url}: Success - Status {result.status_code}")
+    finally:
+        await session.close()
 
 asyncio.run(fetch_with_error_handling())
 ```
@@ -90,18 +98,20 @@ Send POST requests asynchronously:
 
 ```python
 import asyncio
-from reqivo import AsyncSession
+import json
+from reqivo import AsyncReqivo
 
 async def post_data():
     data = {
         "username": "alice",
-        "email": "alice@example.com"
+        "email": "alice@example.com",
     }
 
-    async with AsyncSession() as session:
-        response = await session.post(
+    async with AsyncReqivo() as client:
+        response = await client.post(
             "https://httpbin.org/post",
-            json=data
+            body=json.dumps(data),
+            headers={"Content-Type": "application/json"},
         )
 
         print(f"Status: {response.status_code}")
@@ -119,12 +129,14 @@ import asyncio
 from reqivo import AsyncSession
 
 async def background_fetch(session, url):
-    """Fetch URL in background"""
+    """Fetch URL in background."""
     response = await session.get(url)
     return response.json()
 
 async def main():
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         # Start background task
         task = asyncio.create_task(
             background_fetch(session, "https://httpbin.org/delay/2")
@@ -138,6 +150,8 @@ async def main():
         # Wait for background task to complete
         result = await task
         print(f"Background task completed: {result}")
+    finally:
+        await session.close()
 
 asyncio.run(main())
 ```
@@ -148,10 +162,11 @@ Use async context managers for resource cleanup:
 
 ```python
 import asyncio
+import json
 from reqivo import AsyncSession
 
 class ApiClient:
-    """Example API client using AsyncSession"""
+    """Example API client using AsyncSession."""
 
     def __init__(self, base_url: str):
         self.base_url = base_url
@@ -170,7 +185,11 @@ class ApiClient:
         return response.json()
 
     async def create_user(self, data: dict):
-        response = await self.session.post(f"{self.base_url}/users", json=data)
+        response = await self.session.post(
+            f"{self.base_url}/users",
+            body=json.dumps(data),
+            headers={"Content-Type": "application/json"},
+        )
         return response.json()
 
 # Usage
@@ -191,7 +210,7 @@ import asyncio
 from reqivo import AsyncSession
 
 async def fetch_with_semaphore(session, url, semaphore):
-    """Fetch URL with semaphore-controlled concurrency"""
+    """Fetch URL with semaphore-controlled concurrency."""
     async with semaphore:
         response = await session.get(url)
         return response.status_code
@@ -202,7 +221,9 @@ async def rate_limited_requests():
     # Allow maximum 5 concurrent requests
     semaphore = asyncio.Semaphore(5)
 
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         tasks = [
             fetch_with_semaphore(session, url, semaphore)
             for url in urls
@@ -210,30 +231,33 @@ async def rate_limited_requests():
 
         results = await asyncio.gather(*tasks)
         print(f"Completed {len(results)} requests")
+    finally:
+        await session.close()
 
 asyncio.run(rate_limited_requests())
 ```
 
-## Async Iteration
+## Streaming Responses
 
-Process streamed responses asynchronously:
+Process response bodies in chunks:
 
 ```python
 import asyncio
-from reqivo import AsyncSession
+from reqivo import Session
 
-async def stream_large_file():
-    async with AsyncSession() as session:
-        response = await session.get(
-            "https://httpbin.org/stream-bytes/1024",
-            stream=True
-        )
+def stream_response():
+    session = Session()
+
+    try:
+        response = session.get("https://httpbin.org/stream-bytes/1024")
 
         # Process chunks as they arrive
-        async for chunk in response.iter_content(chunk_size=256):
+        for chunk in response.iter_content(chunk_size=256):
             print(f"Received chunk of {len(chunk)} bytes")
+    finally:
+        session.close()
 
-asyncio.run(stream_large_file())
+stream_response()
 ```
 
 ## Timeout Patterns
@@ -246,12 +270,14 @@ from reqivo import AsyncSession
 from reqivo.exceptions import TimeoutError
 
 async def timeout_patterns():
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         # Simple timeout
         try:
             response = await session.get(
                 "https://httpbin.org/delay/5",
-                timeout=3.0
+                timeout=3.0,
             )
         except TimeoutError:
             print("Request timed out")
@@ -260,10 +286,12 @@ async def timeout_patterns():
         try:
             response = await asyncio.wait_for(
                 session.get("https://httpbin.org/delay/5"),
-                timeout=3.0
+                timeout=3.0,
             )
         except asyncio.TimeoutError:
             print("Request timed out (asyncio)")
+    finally:
+        await session.close()
 
 asyncio.run(timeout_patterns())
 ```
@@ -272,7 +300,7 @@ asyncio.run(timeout_patterns())
 
 1. **Reuse Sessions**: Create one `AsyncSession` and reuse it for multiple requests to benefit from connection pooling
 
-2. **Use Context Managers**: Always use `async with` to ensure proper cleanup
+2. **Use Facades for Simplicity**: Use `AsyncReqivo` with `async with` for automatic cleanup, or `AsyncSession` with `try/finally`
 
 3. **Handle Exceptions**: Wrap async requests in try-except blocks or use `return_exceptions=True` with `gather()`
 
@@ -280,7 +308,7 @@ asyncio.run(timeout_patterns())
 
 5. **Set Timeouts**: Always set appropriate timeouts to prevent hanging requests
 
-6. **Close Sessions**: Ensure sessions are properly closed, either with context managers or explicit `await session.close()`
+6. **Close Sessions**: Ensure sessions are properly closed, either with context managers (`AsyncReqivo`) or explicit `await session.close()`
 
 ## Performance Tips
 
@@ -292,7 +320,7 @@ asyncio.run(timeout_patterns())
 
 ## See Also
 
-- [Quick Start Guide](https://github.com/roldriel/reqivo/blob/main/examples/quick_start.md)
-- [Session Management](https://github.com/roldriel/reqivo/blob/main/examples/session_management.md)
-- [Error Handling](https://github.com/roldriel/reqivo/blob/main/examples/error_handling.md)
-- [Advanced Usage](https://github.com/roldriel/reqivo/blob/main/examples/advanced_usage.md)
+- [Quick Start Guide](quick_start.md)
+- [Session Management](session_management.md)
+- [Error Handling](error_handling.md)
+- [Advanced Usage](advanced_usage.md)

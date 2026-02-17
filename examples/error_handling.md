@@ -4,18 +4,19 @@ Reqivo provides a comprehensive exception hierarchy for handling different types
 
 ## Exception Hierarchy
 
-```
+```text
 ReqivoError (base)
 ├── RequestError
 │   ├── NetworkError
-│   │   ├── ConnectionError
-│   │   ├── ConnectTimeout
-│   │   ├── ReadTimeout
 │   │   └── TlsError
 │   ├── TimeoutError
-│   ├── RedirectLoopError
-│   └── InvalidResponseError
-└── ProtocolError
+│   │   ├── ConnectTimeout
+│   │   └── ReadTimeout
+│   ├── ProtocolError
+│   │   └── InvalidResponseError
+│   └── RedirectLoopError
+├── TooManyRedirects
+└── WebSocketError
 ```
 
 ## Basic Error Handling
@@ -61,14 +62,12 @@ finally:
 
 ```python
 from reqivo import Session
-from reqivo.exceptions import NetworkError, ConnectionError
+from reqivo.exceptions import NetworkError
 
 session = Session()
 
 try:
     response = session.get("https://nonexistent-domain-12345.com")
-except ConnectionError as e:
-    print(f"Could not connect to server: {e}")
 except NetworkError as e:
     print(f"Network error occurred: {e}")
 finally:
@@ -123,32 +122,34 @@ from reqivo.exceptions import NetworkError, TimeoutError
 import time
 
 def fetch_with_retry(url: str, max_retries: int = 3):
-    """Fetch URL with exponential backoff retry"""
+    """Fetch URL with exponential backoff retry."""
     session = Session()
 
-    for attempt in range(max_retries):
-        try:
-            response = session.get(url, timeout=10.0)
-            session.close()
-            return response
+    try:
+        for attempt in range(max_retries):
+            try:
+                response = session.get(url, timeout=10.0)
+                return response
 
-        except (NetworkError, TimeoutError) as e:
-            if attempt == max_retries - 1:
-                session.close()
-                raise
+            except (NetworkError, TimeoutError) as e:
+                if attempt == max_retries - 1:
+                    raise
 
-            wait_time = 2 ** attempt  # Exponential backoff
-            print(f"Attempt {attempt + 1} failed: {e}")
-            print(f"Retrying in {wait_time} seconds...")
-            time.sleep(wait_time)
+                wait_time = 2 ** attempt  # Exponential backoff
+                print(f"Attempt {attempt + 1} failed: {e}")
+                print(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+    finally:
+        session.close()
 
-    session.close()
+    return None
 
 # Usage
 try:
     response = fetch_with_retry("https://httpbin.org/delay/2")
-    print(f"Success: {response.status_code}")
-except Exception as e:
+    if response:
+        print(f"Success: {response.status_code}")
+except (NetworkError, TimeoutError) as e:
     print(f"All retries failed: {e}")
 ```
 
@@ -159,24 +160,25 @@ from reqivo import Session
 from reqivo.exceptions import ReqivoError
 
 def fetch_with_fallback(primary_url: str, fallback_url: str):
-    """Try primary endpoint, fallback to secondary on failure"""
+    """Try primary endpoint, fallback to secondary on failure."""
     session = Session()
 
     try:
-        response = session.get(primary_url, timeout=5.0)
-        return response
-
-    except ReqivoError as e:
-        print(f"Primary endpoint failed: {e}")
-        print(f"Trying fallback endpoint...")
-
         try:
-            response = session.get(fallback_url, timeout=5.0)
+            response = session.get(primary_url, timeout=5.0)
             return response
 
-        except ReqivoError as e2:
-            print(f"Fallback endpoint also failed: {e2}")
-            raise
+        except ReqivoError as e:
+            print(f"Primary endpoint failed: {e}")
+            print(f"Trying fallback endpoint...")
+
+            try:
+                response = session.get(fallback_url, timeout=5.0)
+                return response
+
+            except ReqivoError as e2:
+                print(f"Fallback endpoint also failed: {e2}")
+                raise
 
     finally:
         session.close()
@@ -185,7 +187,7 @@ def fetch_with_fallback(primary_url: str, fallback_url: str):
 try:
     response = fetch_with_fallback(
         "https://primary.api.example.com/data",
-        "https://backup.api.example.com/data"
+        "https://backup.api.example.com/data",
     )
     print(response.json())
 except ReqivoError:
@@ -208,7 +210,7 @@ class CircuitState(Enum):
 
 @dataclass
 class CircuitBreaker:
-    """Circuit breaker for API calls"""
+    """Circuit breaker for API calls."""
     failure_threshold: int = 5
     timeout: float = 60.0  # seconds
     success_threshold: int = 2  # successes needed to close
@@ -225,7 +227,7 @@ class CircuitBreaker:
                 self.state = CircuitState.HALF_OPEN
                 self.success_count = 0
             else:
-                raise Exception("Circuit breaker is OPEN")
+                raise ReqivoError("Circuit breaker is OPEN")
 
         try:
             result = func(*args, **kwargs)
@@ -239,7 +241,7 @@ class CircuitBreaker:
 
             return result
 
-        except ReqivoError as e:
+        except ReqivoError:
             self.failure_count += 1
             self.last_failure_time = time.time()
 
@@ -264,7 +266,7 @@ for i in range(10):
     try:
         data = breaker.call(api_call)
         print(f"Call {i}: Success")
-    except Exception as e:
+    except ReqivoError as e:
         print(f"Call {i}: Failed - {e}")
     time.sleep(1)
 ```
@@ -279,21 +281,25 @@ from reqivo import AsyncSession
 from reqivo.exceptions import TimeoutError, NetworkError
 
 async def fetch_data():
-    async with AsyncSession() as session:
-        try:
-            response = await session.get(
-                "https://httpbin.org/delay/10",
-                timeout=5.0
-            )
-            return response.json()
+    session = AsyncSession()
 
-        except TimeoutError:
-            print("Request timed out")
-            return None
+    try:
+        response = await session.get(
+            "https://httpbin.org/delay/10",
+            timeout=5.0,
+        )
+        return response.json()
 
-        except NetworkError as e:
-            print(f"Network error: {e}")
-            return None
+    except TimeoutError:
+        print("Request timed out")
+        return None
+
+    except NetworkError as e:
+        print(f"Network error: {e}")
+        return None
+
+    finally:
+        await session.close()
 
 # Run
 data = asyncio.run(fetch_data())
@@ -313,7 +319,9 @@ async def fetch_with_error_handling():
         "https://nonexistent.example.com",  # Network error
     ]
 
-    async with AsyncSession() as session:
+    session = AsyncSession()
+
+    try:
         tasks = []
         for url in urls:
             tasks.append(session.get(url, timeout=5.0))
@@ -325,8 +333,12 @@ async def fetch_with_error_handling():
         for url, result in zip(urls, results):
             if isinstance(result, ReqivoError):
                 print(f"{url}: Error - {type(result).__name__}: {result}")
+            elif isinstance(result, Exception):
+                print(f"{url}: Unexpected error - {result}")
             else:
                 print(f"{url}: Success - Status {result.status_code}")
+    finally:
+        await session.close()
 
 asyncio.run(fetch_with_error_handling())
 ```
@@ -343,7 +355,7 @@ from reqivo.exceptions import ReqivoError
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger(__name__)
 
@@ -353,10 +365,10 @@ try:
     response = session.get("https://httpbin.org/status/404")
 
     if response.status_code == 404:
-        logger.warning(f"Resource not found: {response.url}")
+        logger.warning("Resource not found: %s", response.url)
 
 except ReqivoError as e:
-    logger.error(f"Request failed: {e}", exc_info=True)
+    logger.error("Request failed: %s", e, exc_info=True)
 
 finally:
     session.close()
@@ -365,15 +377,15 @@ finally:
 ### Structured Logging
 
 ```python
-import logging
 import json
+import logging
 from reqivo import Session
 from reqivo.exceptions import ReqivoError
 
 logger = logging.getLogger(__name__)
 
 def log_request_error(url: str, error: Exception):
-    """Log request error with structured data"""
+    """Log request error with structured data."""
     log_data = {
         "event": "request_error",
         "url": url,
@@ -396,7 +408,7 @@ finally:
 
 1. **Catch Specific Exceptions**: Handle specific exceptions before general ones
 
-2. **Always Close Sessions**: Use `finally` blocks or context managers to ensure cleanup
+2. **Always Close Sessions**: Use `finally` blocks to ensure cleanup
 
 3. **Set Timeouts**: Always set appropriate timeouts to avoid hanging requests
 
@@ -426,7 +438,7 @@ try:
     if response.status_code >= 400:
         print(f"HTTP error: {response.status_code}")
 
-    elif response.status_code >= 200 and response.status_code < 300:
+    elif 200 <= response.status_code < 300:
         print(f"Success: {response.status_code}")
 
 except ReqivoError as e:
@@ -439,13 +451,15 @@ finally:
 ### Timeout Strategy
 
 ```python
+import json
 from reqivo import Session
 from reqivo.exceptions import TimeoutError
 
 session = Session()
 
-# Different timeouts for different operations
 try:
+    # Different timeouts for different operations
+
     # Quick health check
     health = session.get("https://api.example.com/health", timeout=2.0)
 
@@ -455,8 +469,9 @@ try:
     # Long-running operation
     report = session.post(
         "https://api.example.com/generate-report",
-        json={"type": "monthly"},
-        timeout=30.0
+        body=json.dumps({"type": "monthly"}),
+        headers={"Content-Type": "application/json"},
+        timeout=30.0,
     )
 
 except TimeoutError as e:
@@ -468,7 +483,7 @@ finally:
 
 ## See Also
 
-- [Quick Start Guide](https://github.com/roldriel/reqivo/blob/main/examples/quick_start.md)
-- [Async Patterns](https://github.com/roldriel/reqivo/blob/main/examples/async_patterns.md)
-- [Session Management](https://github.com/roldriel/reqivo/blob/main/examples/session_management.md)
-- [Advanced Usage](https://github.com/roldriel/reqivo/blob/main/examples/advanced_usage.md)
+- [Quick Start Guide](quick_start.md)
+- [Async Patterns](async_patterns.md)
+- [Session Management](session_management.md)
+- [Advanced Usage](advanced_usage.md)
