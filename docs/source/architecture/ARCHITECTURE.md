@@ -55,19 +55,27 @@ Location: `src/reqivo/client/`
 
 This is the only layer the end user imports directly.
 
+*   **Facade (`facade.py`)**: "The Front Door".
+    *   **Responsibility**: Unified entry point wrapping Session with a fluent API.
+    *   **Classes**: `Reqivo` (sync) and `AsyncReqivo` (async).
+    *   **Features**: Method chaining for auth and hooks, WebSocket factory, context manager support.
 *   **Session (`session.py`)**: "The Brain".
     *   **Responsibility**: Maintains persistent state between requests.
-    *   **Data**: Cookie Jar, Authentication credentials, Default Headers.
+    *   **Data**: Cookie Jar, Authentication credentials, Default Headers, Base URL, Default Timeout.
     *   **Resources**: Manages `ConnectionPool` lifecycle.
+    *   **Hooks**: Pre-request and post-response interceptors (sync and async).
 *   **Request (`request.py`)**: "The Builder".
     *   **Responsibility**: Ephemeral object preparing data for sending.
     *   **Action**: Validates inputs, serializes body, and delegates sending to session/transport.
+    *   **Methods**: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS.
 *   **Response (`response.py`)**: "The Result".
     *   **Responsibility**: Parse and expose response comfortably.
     *   **Optimization**: Uses `__slots__` to reduce memory in high-throughput apps.
 *   **WebSocket (`websocket.py`)**: RFC 6455 Client.
     *   Handles initial handshake (HTTP Upgrade).
     *   Manages frame send/receive loop.
+    *   Auto-reconnect with exponential backoff.
+    *   Configurable frame size limits.
 
 ### Layer 2: PROTOCOL (Communication Rules)
 Location: `src/reqivo/http/`

@@ -1,7 +1,7 @@
 # 📚 Reqivo Documentation Index
 
 > **Central Project Map**
-> Version: 0.1.0
+> Version: 0.3.0
 
 ## 🧭 Navigation Paths
 
@@ -45,7 +45,7 @@ Here you will find all project documents organized by location and purpose.
 |------|---------|
 | **[PROJECT_ANALYSIS.md](https://github.com/roldriel/reqivo/blob/main/docs/source/architecture/PROJECT_ANALYSIS.md)** | 📖 Full context, layer vision, and scope. |
 | **[ARCHITECTURE.md](https://github.com/roldriel/reqivo/blob/main/docs/source/architecture/ARCHITECTURE.md)** | 🏗️ Technical summary and general state. |
-| **[0000-ADR.md](https://github.com/roldriel/reqivo/blob/main/docs/source/architecture/ADR/0000-ADR.md)** | ⚖️ **Decisions**. Why it was done this way (14 records). |
+| **[0000-ADR.md](https://github.com/roldriel/reqivo/blob/main/docs/source/architecture/ADR/0000-ADR.md)** | ⚖️ **Decisions**. Why it was done this way (18 records). |
 | **[ROADMAP.md](https://github.com/roldriel/reqivo/blob/main/docs/source/architecture/ROADMAP.md)** | 🗺️ Future & Status. Milestones v0.1.0 → v1.0.0. |
 
 ### 💻 Development (`docs/development/`)
