@@ -17,7 +17,7 @@ def test_build_request_basic():
     raw = Request.build_request("GET", "/", "example.com", {}, None)
     assert b"GET / HTTP/1.1\r\n" in raw
     assert b"Host: example.com\r\n" in raw
-    assert b"User-Agent: reqivo/0.1\r\n" in raw
+    assert b"User-Agent: reqivo/0.3\r\n" in raw
     assert b"Connection: close\r\n" in raw
 
 

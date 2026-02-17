@@ -9,6 +9,7 @@ Test Coverage:
     - Request methods (GET, POST) with header/cookie merging
     - Connection pool integration
     - Error handling and resource cleanup
+    - Global config (base_url, default_timeout)
 
 Testing Strategy:
     - Mock Request, AsyncRequest, and ConnectionPool to avoid real HTTP calls
@@ -67,6 +68,20 @@ class TestSessionInit:
         assert session._basic_auth is None
         assert session._bearer_token is None
         assert session.pool is not None
+
+    def test_init_with_base_url(self) -> None:
+        """Test Session initialization with base_url."""
+        s = Session(base_url="https://api.example.com")
+        assert s.base_url == "https://api.example.com"
+
+    def test_init_with_default_timeout(self) -> None:
+        """Test Session initialization with custom default_timeout."""
+        s = Session(default_timeout=10)
+        assert s.default_timeout == 10
+
+    def test_init_default_timeout_is_five(self, session: Session) -> None:
+        """Test that default_timeout is 5 by default."""
+        assert session.default_timeout == 5
 
     def test_set_basic_auth(self, session: Session) -> None:
         """Test setting Basic Auth credentials."""
@@ -166,7 +181,7 @@ class TestSessionRequests:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.get.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         # Execute
@@ -176,7 +191,7 @@ class TestSessionRequests:
         assert result == mock_response
         mock_pool.get_connection.assert_called_once()
         mock_pool.put_connection.assert_called_once_with(mock_conn)
-        MockRequest.get.assert_called_once()
+        MockRequest.send.assert_called_once()
 
     @mock.patch("reqivo.client.session.Request")
     @mock.patch("reqivo.client.session.urllib.parse.urlparse")
@@ -199,14 +214,14 @@ class TestSessionRequests:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.get.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.set_basic_auth("user", "pass")
         session.get("https://example.com/test")
 
         # Check that Authorization header was included
-        call_kwargs = MockRequest.get.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"].startswith("Basic ")
 
@@ -231,13 +246,13 @@ class TestSessionRequests:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.get.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.cookies = {"session_id": "abc123"}
         session.get("https://example.com/test")
 
-        call_kwargs = MockRequest.get.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Cookie" in call_kwargs["headers"]
         assert "session_id=abc123" in call_kwargs["headers"]["Cookie"]
 
@@ -249,6 +264,7 @@ class TestSessionRequests:
         """Test that GET raises ValueError for invalid URL without hostname."""
         mock_parsed = mock.Mock()
         mock_parsed.hostname = None
+        mock_parsed.scheme = ""
         mock_urlparse.return_value = mock_parsed
 
         with pytest.raises(ValueError) as exc_info:
@@ -274,7 +290,7 @@ class TestSessionRequests:
         session.pool = mock_pool
 
         MockRequest.set_session_instance = mock.Mock()
-        MockRequest.get.side_effect = Exception("Network error")
+        MockRequest.send.side_effect = Exception("Network error")
 
         with pytest.raises(Exception):
             session.get("https://example.com/test")
@@ -302,13 +318,13 @@ class TestSessionRequests:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.post.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         body_data = '{"key": "value"}'
         session.post("https://example.com/api", body=body_data)
 
-        call_kwargs = MockRequest.post.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert call_kwargs["body"] == body_data
 
     def test_close_closes_pool(self, session: Session) -> None:
@@ -333,6 +349,15 @@ class TestAsyncSession:
         assert async_session.headers == {}
         assert async_session._basic_auth is None
         assert async_session._bearer_token is None
+
+    def test_async_init_with_base_url(self) -> None:
+        """Test AsyncSession initialization with base_url."""
+        s = AsyncSession(base_url="https://api.example.com")
+        assert s.base_url == "https://api.example.com"
+
+    def test_async_init_default_timeout(self, async_session: AsyncSession) -> None:
+        """Test AsyncSession default_timeout is 5."""
+        assert async_session.default_timeout == 5
 
     def test_async_set_basic_auth(self, async_session: AsyncSession) -> None:
         """Test async Basic Auth."""
@@ -386,7 +411,6 @@ class TestAsyncSession:
         async_session.pool = mock_pool
 
         mock_send.return_value = mock_response
-        # MockAsyncRequest.set_session_instance = mock.Mock() # Removed as we patch send directly
 
         result = await async_session.get("https://example.com/test")
 
@@ -644,13 +668,13 @@ class TestSessionExceptionHandling:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.get.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.get("https://example.com/test")
 
         # Verify Bearer token was added
-        call_kwargs = MockRequest.get.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"] == "Bearer my_bearer_token"
 
@@ -679,13 +703,13 @@ class TestSessionExceptionHandling:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.post.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.post("https://example.com/api", body="test")
 
         # Verify Basic Auth header was added
-        call_kwargs = MockRequest.post.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"].startswith("Basic ")
 
@@ -714,13 +738,13 @@ class TestSessionExceptionHandling:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.post.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.post("https://example.com/api", body="test")
 
         # Verify Bearer token was added
-        call_kwargs = MockRequest.post.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Authorization" in call_kwargs["headers"]
         assert call_kwargs["headers"]["Authorization"] == "Bearer token_abc123"
 
@@ -749,13 +773,13 @@ class TestSessionExceptionHandling:
         mock_pool.get_connection.return_value = mock_conn
         session.pool = mock_pool
 
-        MockRequest.post.return_value = mock_response
+        MockRequest.send.return_value = mock_response
         MockRequest.set_session_instance = mock.Mock()
 
         session.post("https://example.com/api", body="test")
 
         # Verify Cookie header was added
-        call_kwargs = MockRequest.post.call_args[1]
+        call_kwargs = MockRequest.send.call_args[1]
         assert "Cookie" in call_kwargs["headers"]
         cookie_header = call_kwargs["headers"]["Cookie"]
         assert "session_id=xyz789" in cookie_header
@@ -768,6 +792,7 @@ class TestSessionExceptionHandling:
 
         mock_parsed = mock.Mock()
         mock_parsed.hostname = None
+        mock_parsed.scheme = ""
         mock_urlparse.return_value = mock_parsed
 
         with pytest.raises(ValueError, match="Invalid URL"):
@@ -795,7 +820,7 @@ class TestSessionExceptionHandling:
         session.pool = mock_pool
 
         MockRequest.set_session_instance = mock.Mock()
-        MockRequest.post.side_effect = RuntimeError("POST failed")
+        MockRequest.send.side_effect = RuntimeError("POST failed")
 
         with pytest.raises(RuntimeError, match="POST failed"):
             session.post("https://example.com/api", body="test")
@@ -817,7 +842,7 @@ class TestSessionExceptionHandling:
             "reqivo.client.session.SimpleCookie.load",
             side_effect=CookieError("Malformed cookie"),
         ):
-            # Should not raise - exception should be caught (lines 254-257)
+            # Should not raise - exception should be caught
             async_session._update_cookies_from_response(mock_response)
 
         # Verify cookies remain empty after exception
@@ -835,12 +860,12 @@ class TestSessionExceptionHandling:
 
         resp = mock.Mock(spec=Response)
         resp.headers = Headers()
-        MockRequest.get.return_value = resp
+        MockRequest.send.return_value = resp
         MockRequest.set_session_instance = mock.Mock()
 
         session.get("http://example.com")
 
-        args, kwargs = MockRequest.get.call_args
+        args, kwargs = MockRequest.send.call_args
         assert kwargs["limits"] == limits
 
     @pytest.mark.asyncio

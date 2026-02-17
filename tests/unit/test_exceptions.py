@@ -13,6 +13,7 @@ from reqivo.exceptions import (
     RequestError,
     TimeoutError,
     TlsError,
+    WebSocketError,
 )
 
 
@@ -27,6 +28,16 @@ def test_exception_hierarchy():
     assert issubclass(TlsError, NetworkError)
     assert issubclass(InvalidResponseError, ProtocolError)
     assert issubclass(RedirectLoopError, RequestError)
+    assert issubclass(WebSocketError, ReqivoError)
+    assert not issubclass(WebSocketError, RequestError)
+
+
+def test_websocket_error_is_reqivo_error():
+    """Verify WebSocketError is a sibling of RequestError under ReqivoError."""
+    error = WebSocketError("test ws error")
+    assert isinstance(error, ReqivoError)
+    assert not isinstance(error, RequestError)
+    assert str(error) == "test ws error"
 
 
 def test_timeout_error_default_message():
