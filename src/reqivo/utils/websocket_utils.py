@@ -7,16 +7,27 @@ import os
 import struct
 from typing import Optional, Tuple
 
+from reqivo.exceptions import WebSocketError
+
+__all__ = [
+    "OPCODE_CONTINUATION",
+    "OPCODE_TEXT",
+    "OPCODE_BINARY",
+    "OPCODE_CLOSE",
+    "OPCODE_PING",
+    "OPCODE_PONG",
+    "WebSocketError",
+    "apply_mask",
+    "create_frame",
+    "parse_frame_header",
+]
+
 OPCODE_CONTINUATION = 0x0
 OPCODE_TEXT = 0x1
 OPCODE_BINARY = 0x2
 OPCODE_CLOSE = 0x8
 OPCODE_PING = 0x9
 OPCODE_PONG = 0xA
-
-
-class WebSocketError(Exception):
-    """Exception raised for WebSocket-related errors."""
 
 
 def apply_mask(data: bytes, mask: bytes) -> bytes:

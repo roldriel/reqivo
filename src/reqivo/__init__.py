@@ -19,22 +19,22 @@ Example:
     Async usage::
 
         import asyncio
-        from reqivo import AsyncSession
+        from reqivo import AsyncReqivo
 
         async def main():
-            async with AsyncSession() as session:
-                response = await session.get('https://api.example.com/data')
+            async with AsyncReqivo() as client:
+                response = await client.get('https://api.example.com/data')
                 print(response.json())
 
         asyncio.run(main())
 
     Sync usage::
 
-        from reqivo import Session
+        from reqivo import Reqivo
 
-        session = Session()
-        response = session.get('https://api.example.com/data')
-        print(response.json())
+        with Reqivo() as client:
+            response = client.get('https://api.example.com/data')
+            print(response.json())
 
     WebSocket usage::
 
@@ -43,14 +43,16 @@ Example:
         ws = WebSocket('wss://echo.websocket.org')
         ws.connect()
         ws.send('Hello!')
-        message = ws.receive()
+        message = ws.recv()
         ws.close()
 """
 
+from reqivo.client.facade import AsyncReqivo, Reqivo
 from reqivo.client.request import AsyncRequest, Request
 from reqivo.client.response import Response
 from reqivo.client.session import AsyncSession, Session
 from reqivo.client.websocket import AsyncWebSocket, WebSocket
+from reqivo.exceptions import WebSocketError
 from reqivo.version import __version__
 
 __all__ = [
@@ -61,4 +63,7 @@ __all__ = [
     "AsyncSession",
     "WebSocket",
     "AsyncWebSocket",
+    "Reqivo",
+    "AsyncReqivo",
+    "WebSocketError",
 ]

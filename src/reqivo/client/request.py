@@ -3,32 +3,35 @@
 HTTP request builder and sender.
 """
 
-# pylint: disable=redefined-builtin,protected-access
+# pylint: disable=redefined-builtin,protected-access,too-many-statements
 
 import asyncio
+import collections.abc
 import socket
 import urllib.parse
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    Optional,
+    Union,
+    cast,
+)
 
 from reqivo.client.response import Response
-
-# pylint: disable=unused-import
-# Note: read_chunked and read_exact will be moved/handled,
-# for now they are still in transport or we will implement body.py logic
-# But the plan says body.py will have this logic.
-# For now, I'll use placeholders if needed or keep existing if they work.
-# Actually they were in core/utils.py which I am about to delete.
-# I will move them to transport/connection.py or http/body.py as per the plan.
 from reqivo.exceptions import (
-    InvalidResponseError,
     NetworkError,
-    ProtocolError,
     ReadTimeout,
     RedirectLoopError,
-    ReqivoError,
     RequestError,
-    TimeoutError,
     TooManyRedirects,
+)
+from reqivo.http.body import (
+    async_iter_write_chunked,
+    file_to_iterator,
+    iter_write_chunked,
 )
 
 # pylint: disable=unused-import
@@ -69,7 +72,7 @@ class Request:
         default_headers = {
             "Host": host,
             "Connection": "close",
-            "User-Agent": "reqivo/0.1",
+            "User-Agent": "reqivo/0.3",
         }
 
         final_headers = {**default_headers, **headers}
@@ -97,6 +100,52 @@ class Request:
         ) + body_bytes
         return full_request
 
+    @staticmethod
+    def build_request_headers(
+        method: str,
+        path: str,
+        host: str,
+        headers: Dict[str, str],
+        *,
+        chunked: bool = False,
+    ) -> bytes:
+        """
+        Build the request line and headers without a body.
+
+        Used for streaming uploads where the body is written separately
+        using chunked transfer encoding.
+
+        Args:
+            method: HTTP method.
+            path: Request path.
+            host: Host header value.
+            headers: Request headers.
+            chunked: If True, adds Transfer-Encoding: chunked.
+
+        Returns:
+            Encoded request line and headers ending with \\r\\n\\r\\n.
+        """
+        request_line = f"{method} {path} HTTP/1.1\r\n"
+        default_headers = {
+            "Host": host,
+            "Connection": "close",
+            "User-Agent": "reqivo/0.3",
+        }
+
+        final_headers = {**default_headers, **headers}
+        if chunked:
+            final_headers["Transfer-Encoding"] = "chunked"
+
+        headers_str = ""
+        for k, v in final_headers.items():
+            if "\r" in k or "\n" in k or "\r" in v or "\n" in v:
+                raise ValueError(f"Invalid character in header {k}: {v!r}")
+            if "\x00" in k or "\x00" in v:
+                raise ValueError(f"Null byte in header {k}: {v!r}")
+            headers_str += f"{k}: {v}\r\n"
+
+        return (request_line + headers_str + "\r\n").encode("utf-8")
+
     @classmethod
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-branches
     def send(
@@ -104,7 +153,7 @@ class Request:
         method: str,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        body: Optional[Union[str, bytes]] = None,
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]] = None,
         timeout: Union[float, Timeout, None] = 5,
         connection: Optional[Connection] = None,
         allow_redirects: bool = True,
@@ -206,7 +255,7 @@ class Request:
         method: str,
         url: str,
         headers: Dict[str, str],
-        body: Optional[Union[str, bytes]],
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]],
         timeout: Timeout,
         connection: Optional[Connection],
         limits: Optional[Dict[str, int]] = None,
@@ -225,7 +274,23 @@ class Request:
 
         headers_dict = headers.copy()
         headers_dict.setdefault("Connection", "close")
-        request_bytes = cls.build_request(method, path, host, headers_dict, body)
+
+        # Determine if body is a streaming iterable
+        is_streaming = (
+            body is not None
+            and not isinstance(body, (str, bytes))
+            and (isinstance(body, collections.abc.Iterator) or hasattr(body, "read"))
+        )
+
+        if is_streaming:
+            request_bytes = cls.build_request_headers(
+                method, path, host, headers_dict, chunked=True
+            )
+        else:
+            simple_body = cast(Optional[Union[str, bytes]], body)
+            request_bytes = cls.build_request(
+                method, path, host, headers_dict, simple_body
+            )
 
         if connection and connection.host == host and connection.port == port:
             conn = connection
@@ -246,6 +311,14 @@ class Request:
                 raise NetworkError("Failed to open connection")
 
             sock.sendall(request_bytes)
+
+            # If streaming, write body using chunked encoding
+            if is_streaming:
+                if hasattr(body, "read"):
+                    chunks = file_to_iterator(body)  # type: ignore[arg-type]
+                else:
+                    chunks = cast(Iterator[bytes], body)
+                iter_write_chunked(sock, chunks)
 
             # Read response
             response_data = b""
@@ -306,7 +379,7 @@ class Request:
         cls,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        body: Optional[Union[str, bytes]] = None,
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]] = None,
         timeout: Optional[float] = 5,
         connection: Optional[Connection] = None,
         allow_redirects: bool = True,
@@ -318,6 +391,127 @@ class Request:
             url,
             headers=headers,
             body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    def put(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return cls.send(
+            "PUT",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    def delete(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return cls.send(
+            "DELETE",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    def patch(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[Union[str, bytes, Iterator[bytes], IO[bytes]]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return cls.send(
+            "PATCH",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    def head(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return cls.send(
+            "HEAD",
+            url,
+            headers=headers,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    def options(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[Connection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return cls.send(
+            "OPTIONS",
+            url,
+            headers=headers,
             timeout=timeout,
             connection=connection,
             allow_redirects=allow_redirects,
@@ -345,7 +539,9 @@ class AsyncRequest:
         method: str,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        body: Optional[Union[str, bytes]] = None,
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ] = None,
         timeout: Union[float, Timeout, None] = 5,
         connection: Optional[AsyncConnection] = None,
         allow_redirects: bool = True,
@@ -435,7 +631,9 @@ class AsyncRequest:
         method: str,
         url: str,
         headers: Dict[str, str],
-        body: Optional[Union[str, bytes]],
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ],
         timeout: Timeout,
         connection: Optional[AsyncConnection],
         limits: Optional[Dict[str, int]] = None,
@@ -455,8 +653,27 @@ class AsyncRequest:
         headers_dict = headers.copy()
         headers_dict.setdefault("Connection", "close")
 
-        # Reuse Request.build_request
-        request_bytes = Request.build_request(method, path, host, headers_dict, body)
+        # Determine if body is a streaming iterable
+        is_async_streaming = body is not None and isinstance(
+            body, collections.abc.AsyncIterator
+        )
+        is_sync_streaming = (
+            body is not None
+            and not isinstance(body, (str, bytes))
+            and not is_async_streaming
+            and (isinstance(body, collections.abc.Iterator) or hasattr(body, "read"))
+        )
+        is_streaming = is_async_streaming or is_sync_streaming
+
+        if is_streaming:
+            request_bytes = Request.build_request_headers(
+                method, path, host, headers_dict, chunked=True
+            )
+        else:
+            simple_body = cast(Optional[Union[str, bytes]], body)
+            request_bytes = Request.build_request(
+                method, path, host, headers_dict, simple_body
+            )
 
         if connection and connection.host == host and connection.port == port:
             conn = connection
@@ -478,6 +695,27 @@ class AsyncRequest:
             conn.writer.write(request_bytes)
             await conn.writer.drain()
 
+            # If streaming, write body using chunked encoding
+            if is_async_streaming:
+                await async_iter_write_chunked(
+                    conn.writer, body  # type: ignore[arg-type]
+                )
+            elif is_sync_streaming:
+                sync_chunks: Iterator[bytes]
+                if hasattr(body, "read"):
+                    sync_chunks = file_to_iterator(body)  # type: ignore[arg-type]
+                else:
+                    sync_chunks = body  # type: ignore[assignment]
+                # Write sync chunks through the async writer
+                for chunk_data in sync_chunks:
+                    if not chunk_data:
+                        continue
+                    size_line = f"{len(chunk_data):x}\r\n".encode("ascii")
+                    conn.writer.write(size_line + chunk_data + b"\r\n")
+                    await conn.writer.drain()
+                conn.writer.write(b"0\r\n\r\n")
+                await conn.writer.drain()
+
             # Read response
             response_data = b""
             try:
@@ -487,15 +725,6 @@ class AsyncRequest:
                             conn.reader.read(4096), timeout=timeout.read
                         )
                     elif timeout.total is not None:
-                        # Fallback to total if read not specific?
-                        # Usually total is handled by wrapping the whole operation?
-                        # But here we are inside.
-                        # If socket connect consumed total?
-                        # connection.py handles connect timeout.
-                        # Here we handle read.
-                        # Use total as read timeout if read is None?
-                        # consistent with connection.py logic:
-                        # read_to = self.timeout.read if ... else self.timeout.total
                         chunk = await asyncio.wait_for(
                             conn.reader.read(4096), timeout=timeout.total
                         )
@@ -554,7 +783,9 @@ class AsyncRequest:
         cls,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        body: Optional[Union[str, bytes]] = None,
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ] = None,
         timeout: Optional[float] = 5,
         connection: Optional[AsyncConnection] = None,
         allow_redirects: bool = True,
@@ -566,6 +797,133 @@ class AsyncRequest:
             url,
             headers=headers,
             body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    async def put(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return await cls.send(
+            "PUT",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    async def delete(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return await cls.send(
+            "DELETE",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    async def patch(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[
+            Union[str, bytes, Iterator[bytes], AsyncIterator[bytes], IO[bytes]]
+        ] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return await cls.send(
+            "PATCH",
+            url,
+            headers=headers,
+            body=body,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    async def head(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return await cls.send(
+            "HEAD",
+            url,
+            headers=headers,
+            timeout=timeout,
+            connection=connection,
+            allow_redirects=allow_redirects,
+            max_redirects=max_redirects,
+            limits=limits,
+        )
+
+    @classmethod
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,missing-function-docstring
+    async def options(
+        cls,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 5,
+        connection: Optional[AsyncConnection] = None,
+        allow_redirects: bool = True,
+        max_redirects: int = 30,
+        limits: Optional[Dict[str, int]] = None,
+    ) -> Response:
+        return await cls.send(
+            "OPTIONS",
+            url,
+            headers=headers,
             timeout=timeout,
             connection=connection,
             allow_redirects=allow_redirects,

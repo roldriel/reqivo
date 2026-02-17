@@ -58,3 +58,7 @@ class RedirectLoopError(RequestError):
 
 class TooManyRedirects(RequestError):
     """Too many redirects occurred."""
+
+
+class WebSocketError(ReqivoError):
+    """Exception raised for WebSocket-related errors."""

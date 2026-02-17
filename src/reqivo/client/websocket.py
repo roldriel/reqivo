@@ -3,7 +3,7 @@
 WebSocket client implementation (Sync and Async).
 """
 
-# pylint: disable=line-too-long,too-many-branches,too-many-statements,too-many-locals,too-many-instance-attributes,broad-exception-caught,no-else-raise
+# pylint: disable=line-too-long,too-many-branches,too-many-statements,too-many-locals,too-many-instance-attributes,broad-exception-caught,no-else-raise,too-many-arguments,too-many-positional-arguments
 
 import asyncio
 import base64
@@ -11,6 +11,7 @@ import contextlib
 import hashlib
 import os
 import socket
+import time
 import urllib.parse
 from typing import Dict, List, Optional, Union
 
@@ -62,6 +63,10 @@ class WebSocket:
         "sock",
         "connected",
         "_buffer",
+        "max_frame_size",
+        "_auto_reconnect",
+        "_max_reconnect_attempts",
+        "_reconnect_delay",
     )
 
     def __init__(
@@ -70,6 +75,10 @@ class WebSocket:
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         subprotocols: Optional[List[str]] = None,
+        max_frame_size: int = MAX_FRAME_SIZE,
+        auto_reconnect: bool = False,
+        max_reconnect_attempts: int = 3,
+        reconnect_delay: float = 1.0,
     ):
         self.url = url
         self.timeout = timeout
@@ -78,6 +87,10 @@ class WebSocket:
         self.sock: Optional[socket.socket] = None
         self.connected = False
         self._buffer = bytearray()
+        self.max_frame_size = max_frame_size
+        self._auto_reconnect = auto_reconnect
+        self._max_reconnect_attempts = max_reconnect_attempts
+        self._reconnect_delay = reconnect_delay
 
     def connect(self) -> None:
         """Establishes the WebSocket connection."""
@@ -150,6 +163,16 @@ class WebSocket:
 
         self.connected = True
 
+    def _reconnect(self) -> None:
+        """Attempt to re-establish the WebSocket connection."""
+        self.connected = False
+        self._buffer = bytearray()
+        if self.sock:
+            with contextlib.suppress(Exception):
+                self.sock.close()
+            self.sock = None
+        self.connect()
+
     def send(self, data: Union[str, bytes]) -> None:
         """Sends data through the WebSocket."""
         if not self.connected:
@@ -157,11 +180,20 @@ class WebSocket:
 
         opcode = OPCODE_TEXT if isinstance(data, str) else OPCODE_BINARY
         payload = data.encode("utf-8") if isinstance(data, str) else data
-
         frame = create_frame(payload, opcode=opcode, mask=True)
-        if self.sock is None:
-            raise ConnectionError("WebSocket is not connected")
-        self.sock.sendall(frame)
+
+        for attempt in range(self._max_reconnect_attempts + 1):
+            try:
+                if self.sock is None:
+                    raise ConnectionError("WebSocket is not connected")
+                self.sock.sendall(frame)
+                return
+            except (ConnectionError, WebSocketError, OSError):
+                if not self._auto_reconnect or attempt >= self._max_reconnect_attempts:
+                    raise
+                delay = self._reconnect_delay * (2**attempt)
+                time.sleep(delay)
+                self._reconnect()
 
     def recv(self) -> Union[str, bytes]:
         """Receives data from the WebSocket."""
@@ -196,10 +228,10 @@ class WebSocket:
             header_len, payload_len, fin, _, _, _, opcode, masked = header_info
 
             # Validate frame size to prevent DoS
-            if payload_len > MAX_FRAME_SIZE:
+            if payload_len > self.max_frame_size:
                 raise WebSocketError(
                     f"Frame payload too large: {payload_len} bytes "
-                    f"(max: {MAX_FRAME_SIZE})"
+                    f"(max: {self.max_frame_size})"
                 )
 
             total_len = header_len + payload_len
@@ -295,6 +327,10 @@ class AsyncWebSocket:
         "_buffer",
         "reader",
         "writer",
+        "max_frame_size",
+        "_auto_reconnect",
+        "_max_reconnect_attempts",
+        "_reconnect_delay",
     )
 
     def __init__(
@@ -303,6 +339,10 @@ class AsyncWebSocket:
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         subprotocols: Optional[List[str]] = None,
+        max_frame_size: int = MAX_FRAME_SIZE,
+        auto_reconnect: bool = False,
+        max_reconnect_attempts: int = 3,
+        reconnect_delay: float = 1.0,
     ):
         self.url = url
         self.timeout = timeout
@@ -313,6 +353,10 @@ class AsyncWebSocket:
         self._buffer = bytearray()
         self.reader: Optional[asyncio.StreamReader] = None
         self.writer: Optional[asyncio.StreamWriter] = None
+        self.max_frame_size = max_frame_size
+        self._auto_reconnect = auto_reconnect
+        self._max_reconnect_attempts = max_reconnect_attempts
+        self._reconnect_delay = reconnect_delay
 
     async def connect(self) -> None:
         """Async connect."""
@@ -403,6 +447,18 @@ class AsyncWebSocket:
 
         self.connected = True
 
+    async def _reconnect(self) -> None:
+        """Attempt to re-establish the async WebSocket connection."""
+        self.connected = False
+        self._buffer = bytearray()
+        if self.connection:
+            with contextlib.suppress(Exception):
+                await self.connection.close()
+            self.connection = None
+        self.reader = None
+        self.writer = None
+        await self.connect()
+
     async def send(self, data: Union[str, bytes]) -> None:
         """Sends data through the WebSocket asynchronously."""
         if not self.connected:
@@ -410,11 +466,20 @@ class AsyncWebSocket:
 
         opcode = OPCODE_TEXT if isinstance(data, str) else OPCODE_BINARY
         payload = data.encode("utf-8") if isinstance(data, str) else data
-
         frame = create_frame(payload, opcode=opcode, mask=True)
-        if self.writer:
-            self.writer.write(frame)
-            await self.writer.drain()
+
+        for attempt in range(self._max_reconnect_attempts + 1):
+            try:
+                if self.writer:
+                    self.writer.write(frame)
+                    await self.writer.drain()
+                return
+            except (ConnectionError, WebSocketError, OSError):
+                if not self._auto_reconnect or attempt >= self._max_reconnect_attempts:
+                    raise
+                delay = self._reconnect_delay * (2**attempt)
+                await asyncio.sleep(delay)
+                await self._reconnect()
 
     async def recv(self) -> Union[str, bytes]:
         """Async recv."""
@@ -458,12 +523,13 @@ class AsyncWebSocket:
                 payload_len = int.from_bytes(header_extra, "big")
 
             # Validate frame size to prevent DoS
-            if payload_len > MAX_FRAME_SIZE:
+            if payload_len > self.max_frame_size:
                 raise WebSocketError(
                     f"Frame payload too large: {payload_len} bytes "
-                    f"(max: {MAX_FRAME_SIZE})"
+                    f"(max: {self.max_frame_size})"
                 )
 
+            mask_key = b""
             if masked:
                 if self.reader is None:
                     raise WebSocketError("WebSocket is not connected")
